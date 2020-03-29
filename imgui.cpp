@@ -800,6 +800,7 @@ CODE
 
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
+#pragma intrinsic( memset )
 
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -807,8 +808,8 @@ CODE
 #include "imgui_internal.h"
 
 // System includes
-#include <ctype.h>      // toupper
-#include <stdio.h>      // vsnprintf, sscanf, printf
+//#include <ctype.h>      // toupper
+//#include <stdio.h>      // vsnprintf, sscanf, printf
 #if defined(_MSC_VER) && _MSC_VER <= 1500 // MSVC 2008 or earlier
 #include <stddef.h>     // intptr_t
 #else
@@ -982,8 +983,9 @@ ImGuiContext*   GImGui = NULL;
 static void*   MallocWrapper(size_t size, void* user_data)    { IM_UNUSED(user_data); return malloc(size); }
 static void    FreeWrapper(void* ptr, void* user_data)        { IM_UNUSED(user_data); free(ptr); }
 #else
-static void*   MallocWrapper(size_t size, void* user_data)    { IM_UNUSED(user_data); IM_UNUSED(size); IM_ASSERT(0); return NULL; }
-static void    FreeWrapper(void* ptr, void* user_data)        { IM_UNUSED(user_data); IM_UNUSED(ptr); IM_ASSERT(0); }
+#include "extern/Enigma/eshared/system/system.hpp"
+static void*   MallocWrapper(size_t size, void* user_data)    { IM_UNUSED(user_data); return new eU8[ size ]; }
+static void    FreeWrapper(void* ptr, void* user_data)        { IM_UNUSED(user_data); delete[] ptr; }
 #endif
 
 static void*  (*GImAllocatorAllocFunc)(size_t size, void* user_data) = MallocWrapper;
@@ -1065,7 +1067,7 @@ void ImGuiStyle::ScaleAllSizes(float scale_factor)
 ImGuiIO::ImGuiIO()
 {
     // Most fields are initialized with zero
-    memset(this, 0, sizeof(*this));
+    eMemSet(this, 0, sizeof(*this));
     IM_ASSERT(IM_ARRAYSIZE(ImGuiIO::MouseDown) == ImGuiMouseButton_COUNT && IM_ARRAYSIZE(ImGuiIO::MouseClicked) == ImGuiMouseButton_COUNT); // Our pre-C++11 IM_STATIC_ASSERT() macros triggers warning on modern compilers so we don't use it here.
 
     // Settings
@@ -1302,14 +1304,14 @@ ImVec2 ImTriangleClosestPoint(const ImVec2& a, const ImVec2& b, const ImVec2& c,
 int ImStricmp(const char* str1, const char* str2)
 {
     int d;
-    while ((d = toupper(*str2) - toupper(*str1)) == 0 && *str1) { str1++; str2++; }
+    while ((d = eToUpper(*str2) - eToUpper(*str1)) == 0 && *str1) { str1++; str2++; }
     return d;
 }
 
 int ImStrnicmp(const char* str1, const char* str2, size_t count)
 {
     int d = 0;
-    while (count > 0 && (d = toupper(*str2) - toupper(*str1)) == 0 && *str1) { str1++; str2++; count--; }
+    while (count > 0 && (d = eToUpper(*str2) - eToUpper(*str1)) == 0 && *str1) { str1++; str2++; count--; }
     return d;
 }
 
@@ -1318,21 +1320,22 @@ void ImStrncpy(char* dst, const char* src, size_t count)
     if (count < 1)
         return;
     if (count > 1)
-        strncpy(dst, src, count - 1);
+        eStrNCopy(dst, src, count - 1);
     dst[count - 1] = 0;
 }
 
 char* ImStrdup(const char* str)
 {
-    size_t len = strlen(str);
+    size_t len = eStrLength(str);
     void* buf = IM_ALLOC(len + 1);
-    return (char*)memcpy(buf, (const void*)str, len + 1);
+    eMemCopy( buf, ( const void* )str, len + 1 );
+    return ( char* )buf;
 }
 
 char* ImStrdupcpy(char* dst, size_t* p_dst_size, const char* src)
 {
-    size_t dst_buf_size = p_dst_size ? *p_dst_size : strlen(dst) + 1;
-    size_t src_size = strlen(src) + 1;
+    size_t dst_buf_size = p_dst_size ? *p_dst_size : eStrLength(dst) + 1;
+    size_t src_size = eStrLength(src) + 1;
     if (dst_buf_size < src_size)
     {
         IM_FREE(dst);
@@ -1340,12 +1343,13 @@ char* ImStrdupcpy(char* dst, size_t* p_dst_size, const char* src)
         if (p_dst_size)
             *p_dst_size = src_size;
     }
-    return (char*)memcpy(dst, (const void*)src, src_size);
+    eMemCopy( dst, ( const void* )src, src_size );
+    return (char*)dst;
 }
 
 const char* ImStrchrRange(const char* str, const char* str_end, char c)
 {
-    const char* p = (const char*)memchr(str, (int)c, str_end - str);
+    const char* p = (const char*)eMemChr(str, (int)c, str_end - str);
     return p;
 }
 
@@ -1360,7 +1364,7 @@ int ImStrlenW(const ImWchar* str)
 // Find end-of-line. Return pointer will point to either first \n, either str_end.
 const char* ImStreolRange(const char* str, const char* str_end)
 {
-    const char* p = (const char*)memchr(str, '\n', str_end - str);
+    const char* p = (const char*)eMemChr(str, '\n', str_end - str);
     return p ? p : str_end;
 }
 
@@ -1374,16 +1378,16 @@ const ImWchar* ImStrbolW(const ImWchar* buf_mid_line, const ImWchar* buf_begin) 
 const char* ImStristr(const char* haystack, const char* haystack_end, const char* needle, const char* needle_end)
 {
     if (!needle_end)
-        needle_end = needle + strlen(needle);
+        needle_end = needle + eStrLength(needle);
 
-    const char un0 = (char)toupper(*needle);
+    const char un0 = (char)eToUpper(*needle);
     while ((!haystack_end && *haystack) || (haystack_end && haystack < haystack_end))
     {
-        if (toupper(*haystack) == un0)
+        if ( eToUpper(*haystack) == un0)
         {
             const char* b = needle + 1;
             for (const char* a = haystack + 1; b < needle_end; a++, b++)
-                if (toupper(*a) != toupper(*b))
+                if ( eToUpper(*a) != eToUpper(*b))
                     break;
             if (b == needle_end)
                 return haystack;
@@ -1405,7 +1409,7 @@ void ImStrTrimBlanks(char* buf)
     while (p > p_start && (p[-1] == ' ' || p[-1] == '\t'))  // Trailing blanks
         p--;
     if (p_start != buf)                     // Copy memory if we had leading blanks
-        memmove(buf, p_start, p - p_start);
+        eMemMove(buf, p_start, p - p_start);
     buf[p - p_start] = 0;                   // Zero terminate
 }
 
@@ -1441,7 +1445,7 @@ int ImFormatString(char* buf, size_t buf_size, const char* fmt, ...)
 #ifdef IMGUI_USE_STB_SPRINTF
     int w = stbsp_vsnprintf(buf, (int)buf_size, fmt, args);
 #else
-    int w = vsnprintf(buf, buf_size, fmt, args);
+    int w = prout_vsnprintf(buf, buf_size, fmt, args);
 #endif
     va_end(args);
     if (buf == NULL)
@@ -1457,7 +1461,7 @@ int ImFormatStringV(char* buf, size_t buf_size, const char* fmt, va_list args)
 #ifdef IMGUI_USE_STB_SPRINTF
     int w = stbsp_vsnprintf(buf, (int)buf_size, fmt, args);
 #else
-    int w = vsnprintf(buf, buf_size, fmt, args);
+    int w = prout_vsnprintf(buf, buf_size, fmt, args);
 #endif
     if (buf == NULL)
         return w;
@@ -1602,7 +1606,7 @@ void*   ImFileLoadToMemory(const char* filename, const char* mode, size_t* out_f
         return NULL;
     }
     if (padding_bytes > 0)
-        memset((void*)(((char*)file_data) + file_size), 0, (size_t)padding_bytes);
+        eMemSet((void*)(((char*)file_data) + file_size), 0, (size_t)padding_bytes);
 
     ImFileClose(f);
     if (out_file_size)
@@ -2076,7 +2080,7 @@ void ImGuiTextFilter::ImGuiTextRange::split(char separator, ImVector<ImGuiTextRa
 void ImGuiTextFilter::Build()
 {
     Filters.resize(0);
-    ImGuiTextRange input_range(InputBuf, InputBuf+strlen(InputBuf));
+    ImGuiTextRange input_range(InputBuf, InputBuf+ eStrLength(InputBuf));
     input_range.split(',', &Filters);
 
     CountGrep = 0;
@@ -2146,7 +2150,7 @@ char ImGuiTextBuffer::EmptyString[1] = { 0 };
 
 void ImGuiTextBuffer::append(const char* str, const char* str_end)
 {
-    int len = str_end ? (int)(str_end - str) : (int)strlen(str);
+    int len = str_end ? (int)(str_end - str) : (int)eStrLength(str);
 
     // Add zero-terminator the first time
     const int write_off = (Buf.Size != 0) ? Buf.Size : 1;
@@ -2158,7 +2162,7 @@ void ImGuiTextBuffer::append(const char* str, const char* str_end)
     }
 
     Buf.resize(needed_sz);
-    memcpy(&Buf[write_off - 1], str, (size_t)len);
+    eMemCopy(&Buf[write_off - 1], str, (size_t)len);
     Buf[write_off - 1 + len] = 0;
 }
 
@@ -2370,7 +2374,7 @@ ImU32 ImGui::GetColorU32(ImU32 col)
     if (style.Alpha >= 1.0f)
         return col;
     ImU32 a = (col & IM_COL32_A_MASK) >> IM_COL32_A_SHIFT;
-    a = (ImU32)(a * style.Alpha); // We don't need to clamp 0..255 because Style.Alpha is in 0..1 range.
+    a = eFtoL( static_cast< float >( a ) * style.Alpha); // We don't need to clamp 0..255 because Style.Alpha is in 0..1 range.
     return (col & ~IM_COL32_A_MASK) | (a << IM_COL32_A_SHIFT);
 }
 
@@ -2585,7 +2589,7 @@ void ImGui::RenderText(ImVec2 pos, const char* text, const char* text_end, bool 
     else
     {
         if (!text_end)
-            text_end = text + strlen(text); // FIXME-OPT
+            text_end = text + eStrLength(text); // FIXME-OPT
         text_display_end = text_end;
     }
 
@@ -2603,7 +2607,7 @@ void ImGui::RenderTextWrapped(ImVec2 pos, const char* text, const char* text_end
     ImGuiWindow* window = g.CurrentWindow;
 
     if (!text_end)
-        text_end = text + strlen(text); // FIXME-OPT
+        text_end = text + eStrLength(text); // FIXME-OPT
 
     if (text != text_end)
     {
@@ -2815,7 +2819,7 @@ ImGuiWindow::ImGuiWindow(ImGuiContext* context, const char* name)
     WindowPadding = ImVec2(0.0f, 0.0f);
     WindowRounding = 0.0f;
     WindowBorderSize = 0.0f;
-    NameBufLen = (int)strlen(name) + 1;
+    NameBufLen = (int)eStrLength(name) + 1;
     MoveId = GetID("#MOVE");
     ChildId = 0;
     Scroll = ImVec2(0.0f, 0.0f);
@@ -3791,7 +3795,7 @@ void ImGui::NewFrame()
     // Update keyboard input state
     // Synchronize io.KeyMods with individual modifiers io.KeyXXX bools
     g.IO.KeyMods = GetMergedKeyModFlags();
-    memcpy(g.IO.KeysDownDurationPrev, g.IO.KeysDownDuration, sizeof(g.IO.KeysDownDuration));
+    eMemCopy(g.IO.KeysDownDurationPrev, g.IO.KeysDownDuration, sizeof(g.IO.KeysDownDuration));
     for (int i = 0; i < IM_ARRAYSIZE(g.IO.KeysDown); i++)
         g.IO.KeysDownDuration[i] = g.IO.KeysDown[i] ? (g.IO.KeysDownDuration[i] < 0.0f ? 0.0f : g.IO.KeysDownDuration[i] + g.IO.DeltaTime) : -1.0f;
 
@@ -4101,7 +4105,7 @@ void ImDrawDataBuilder::FlattenIntoSingleLayer()
         ImVector<ImDrawList*>& layer = Layers[layer_n];
         if (layer.empty())
             continue;
-        memcpy(&Layers[0][n], &layer[0], layer.Size * sizeof(ImDrawList*));
+        eMemCopy(&Layers[0][n], &layer[0], layer.Size * sizeof(ImDrawList*));
         n += layer.Size;
         layer.resize(0);
     }
@@ -4216,7 +4220,7 @@ void ImGui::EndFrame()
     // Clear Input data for next frame
     g.IO.MouseWheel = g.IO.MouseWheelH = 0.0f;
     g.IO.InputQueueCharacters.resize(0);
-    memset(g.IO.NavInputs, 0, sizeof(g.IO.NavInputs));
+    eMemSet(g.IO.NavInputs, 0, sizeof(g.IO.NavInputs));
 }
 
 void ImGui::Render()
@@ -5183,7 +5187,7 @@ static void ImGui::RenderWindowOuterBorders(ImGuiWindow* window)
             ImVec2 CornerPosN1, CornerPosN2;
             float  OuterAngle;
         };
-        static const ImGuiResizeBorderDef resize_border_def[4] =
+        /*static*/ const ImGuiResizeBorderDef resize_border_def[4] =
         {
             { ImVec2(0,+1), ImVec2(0,0), ImVec2(1,0), IM_PI*1.50f }, // Top
             { ImVec2(-1,0), ImVec2(1,0), ImVec2(1,1), IM_PI*0.00f }, // Right
@@ -5533,7 +5537,7 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
         bool window_title_visible_elsewhere = false;
         if (g.NavWindowingList != NULL && (window->Flags & ImGuiWindowFlags_NoNavFocus) == 0)   // Window titles visible when using CTRL+TAB
             window_title_visible_elsewhere = true;
-        if (window_title_visible_elsewhere && !window_just_created && strcmp(name, window->Name) != 0)
+        if (window_title_visible_elsewhere && !window_just_created && eStrCompare(name, window->Name) != 0)
         {
             size_t buf_len = (size_t)window->NameBufLen;
             window->Name = ImStrdupcpy(window->Name, &buf_len, name);
@@ -6046,7 +6050,7 @@ void ImGui::BringWindowToFocusFront(ImGuiWindow* window)
     for (int i = g.WindowsFocusOrder.Size - 2; i >= 0; i--) // We can ignore the top-most window
         if (g.WindowsFocusOrder[i] == window)
         {
-            memmove(&g.WindowsFocusOrder[i], &g.WindowsFocusOrder[i + 1], (size_t)(g.WindowsFocusOrder.Size - i - 1) * sizeof(ImGuiWindow*));
+            eMemMove(&g.WindowsFocusOrder[i], &g.WindowsFocusOrder[i + 1], (size_t)(g.WindowsFocusOrder.Size - i - 1) * sizeof(ImGuiWindow*));
             g.WindowsFocusOrder[g.WindowsFocusOrder.Size - 1] = window;
             break;
         }
@@ -6061,7 +6065,7 @@ void ImGui::BringWindowToDisplayFront(ImGuiWindow* window)
     for (int i = g.Windows.Size - 2; i >= 0; i--) // We can ignore the top-most window
         if (g.Windows[i] == window)
         {
-            memmove(&g.Windows[i], &g.Windows[i + 1], (size_t)(g.Windows.Size - i - 1) * sizeof(ImGuiWindow*));
+            eMemMove(&g.Windows[i], &g.Windows[i + 1], (size_t)(g.Windows.Size - i - 1) * sizeof(ImGuiWindow*));
             g.Windows[g.Windows.Size - 1] = window;
             break;
         }
@@ -6075,7 +6079,7 @@ void ImGui::BringWindowToDisplayBack(ImGuiWindow* window)
     for (int i = 0; i < g.Windows.Size; i++)
         if (g.Windows[i] == window)
         {
-            memmove(&g.Windows[1], &g.Windows[0], (size_t)i * sizeof(ImGuiWindow*));
+            eMemMove(&g.Windows[1], &g.Windows[0], (size_t)i * sizeof(ImGuiWindow*));
             g.Windows[0] = window;
             break;
         }
@@ -6696,7 +6700,7 @@ bool ImGui::IsRectVisible(const ImVec2& rect_min, const ImVec2& rect_max)
 bool ImGui::DebugCheckVersionAndDataLayout(const char* version, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_vert, size_t sz_idx)
 {
     bool error = false;
-    if (strcmp(version, IMGUI_VERSION) != 0) { error = true; IM_ASSERT(strcmp(version, IMGUI_VERSION) == 0 && "Mismatched version string!"); }
+    if (eStrCompare(version, IMGUI_VERSION) != 0) { error = true; IM_ASSERT(eStrCompare(version, IMGUI_VERSION) == 0 && "Mismatched version string!"); }
     if (sz_io != sizeof(ImGuiIO)) { error = true; IM_ASSERT(sz_io == sizeof(ImGuiIO) && "Mismatched struct layout!"); }
     if (sz_style != sizeof(ImGuiStyle)) { error = true; IM_ASSERT(sz_style == sizeof(ImGuiStyle) && "Mismatched struct layout!"); }
     if (sz_vec2 != sizeof(ImVec2)) { error = true; IM_ASSERT(sz_vec2 == sizeof(ImVec2) && "Mismatched struct layout!"); }
@@ -8403,7 +8407,7 @@ static void ImGui::NavUpdate()
             g.IO.NavInputs[ImGuiNavInput_KeyMenu_]  = 1.0f;
         #undef NAV_MAP_KEY
     }
-    memcpy(g.IO.NavInputsDownDurationPrev, g.IO.NavInputsDownDuration, sizeof(g.IO.NavInputsDownDuration));
+    eMemCopy(g.IO.NavInputsDownDurationPrev, g.IO.NavInputsDownDuration, sizeof(g.IO.NavInputsDownDuration));
     for (int i = 0; i < IM_ARRAYSIZE(g.IO.NavInputs); i++)
         g.IO.NavInputsDownDuration[i] = (g.IO.NavInputs[i] > 0.0f) ? (g.IO.NavInputsDownDuration[i] < 0.0f ? 0.0f : g.IO.NavInputsDownDuration[i] + g.IO.DeltaTime) : -1.0f;
 
@@ -8967,7 +8971,7 @@ static const char* GetFallbackWindowNameForWindowingList(ImGuiWindow* window)
 {
     if (window->Flags & ImGuiWindowFlags_Popup)
         return "(Popup)";
-    if ((window->Flags & ImGuiWindowFlags_MenuBar) && strcmp(window->Name, "##MainMenuBar") == 0)
+    if ((window->Flags & ImGuiWindowFlags_MenuBar) && eStrCompare(window->Name, "##MainMenuBar") == 0)
         return "(Main menu bar)";
     return "(Untitled)";
 }
@@ -9016,7 +9020,7 @@ void ImGui::ClearDragDrop()
     g.DragDropAcceptFrameCount = -1;
 
     g.DragDropPayloadBufHeap.clear();
-    memset(&g.DragDropPayloadBufLocal, 0, sizeof(g.DragDropPayloadBufLocal));
+    eMemSet(&g.DragDropPayloadBufLocal, 0, sizeof(g.DragDropPayloadBufLocal));
 }
 
 // Call when current ID is active.
@@ -9148,7 +9152,7 @@ bool ImGui::SetDragDropPayload(const char* type, const void* data, size_t data_s
         cond = ImGuiCond_Always;
 
     IM_ASSERT(type != NULL);
-    IM_ASSERT(strlen(type) < IM_ARRAYSIZE(payload.DataType) && "Payload type can be at most 32 characters long");
+    IM_ASSERT( eStrLength(type) < IM_ARRAYSIZE(payload.DataType) && "Payload type can be at most 32 characters long");
     IM_ASSERT((data != NULL && data_size > 0) || (data == NULL && data_size == 0));
     IM_ASSERT(cond == ImGuiCond_Always || cond == ImGuiCond_Once);
     IM_ASSERT(payload.SourceId != 0);                               // Not called between BeginDragDropSource() and EndDragDropSource()
@@ -9163,14 +9167,14 @@ bool ImGui::SetDragDropPayload(const char* type, const void* data, size_t data_s
             // Store in heap
             g.DragDropPayloadBufHeap.resize((int)data_size);
             payload.Data = g.DragDropPayloadBufHeap.Data;
-            memcpy(payload.Data, data, data_size);
+            eMemCopy(payload.Data, data, data_size);
         }
         else if (data_size > 0)
         {
             // Store locally
-            memset(&g.DragDropPayloadBufLocal, 0, sizeof(g.DragDropPayloadBufLocal));
+            eMemSet(&g.DragDropPayloadBufLocal, 0, sizeof(g.DragDropPayloadBufLocal));
             payload.Data = g.DragDropPayloadBufLocal;
-            memcpy(payload.Data, data, data_size);
+            eMemCopy(payload.Data, data, data_size);
         }
         else
         {
@@ -9567,17 +9571,17 @@ ImGuiWindowSettings* ImGui::CreateNewWindowSettings(const char* name)
 #if !IMGUI_DEBUG_INI_SETTINGS
     // Skip to the "###" marker if any. We don't skip past to match the behavior of GetID()
     // Preserve the full string when IMGUI_DEBUG_INI_SETTINGS is set to make .ini inspection easier.
-    if (const char* p = strstr(name, "###"))
+    if (const char* p = eStrStr(name, "###"))
         name = p;
 #endif
-    const size_t name_len = strlen(name);
+    const size_t name_len = eStrLength(name);
 
     // Allocate chunk
     const size_t chunk_size = sizeof(ImGuiWindowSettings) + name_len + 1;
     ImGuiWindowSettings* settings = g.SettingsWindows.alloc_chunk(chunk_size);
     IM_PLACEMENT_NEW(settings) ImGuiWindowSettings();
     settings->ID = ImHashStr(name, name_len);
-    memcpy(settings->GetName(), name, name_len + 1);   // Store with zero terminator
+    eMemCopy(settings->GetName(), name, name_len + 1);   // Store with zero terminator
 
     return settings;
 }
@@ -9628,10 +9632,10 @@ void ImGui::LoadIniSettingsFromMemory(const char* ini_data, size_t ini_size)
     // For user convenience, we allow passing a non zero-terminated string (hence the ini_size parameter).
     // For our convenience and to make the code simpler, we'll also write zero-terminators within the buffer. So let's create a writable copy..
     if (ini_size == 0)
-        ini_size = strlen(ini_data);
+        ini_size = eStrLength(ini_data);
     char* buf = (char*)IM_ALLOC(ini_size + 1);
     char* buf_end = buf + ini_size;
-    memcpy(buf, ini_data, ini_size);
+    eMemCopy(buf, ini_data, ini_size);
     buf[ini_size] = 0;
 
     void* entry_data = NULL;
@@ -9720,9 +9724,9 @@ static void WindowSettingsHandler_ReadLine(ImGuiContext*, ImGuiSettingsHandler*,
     ImGuiWindowSettings* settings = (ImGuiWindowSettings*)entry;
     int x, y;
     int i;
-    if (sscanf(line, "Pos=%i,%i", &x, &y) == 2)         settings->Pos = ImVec2ih((short)x, (short)y);
-    else if (sscanf(line, "Size=%i,%i", &x, &y) == 2)   settings->Size = ImVec2ih((short)x, (short)y);
-    else if (sscanf(line, "Collapsed=%d", &i) == 1)     settings->Collapsed = (i != 0);
+    if (prout_sscanf(line, "Pos=%i,%i", &x, &y) == 2)         settings->Pos = ImVec2ih((short)x, (short)y);
+    else if ( prout_sscanf(line, "Size=%i,%i", &x, &y) == 2)   settings->Size = ImVec2ih((short)x, (short)y);
+    else if ( prout_sscanf(line, "Collapsed=%d", &i) == 1)     settings->Collapsed = (i != 0);
 }
 
 static void WindowSettingsHandler_WriteAll(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* buf)
@@ -9790,8 +9794,11 @@ static void WindowSettingsHandler_WriteAll(ImGuiContext* ctx, ImGuiSettingsHandl
 // Win32 clipboard implementation
 static const char* GetClipboardTextFn_DefaultImpl(void*)
 {
-    static ImVector<char> buf_local;
-    buf_local.clear();
+    static ImVector<char> *  buf_local = nullptr;
+    if ( buf_local == nullptr ) { // No TLS so this is not thread safe !
+        buf_local = new ImVector<char>;
+    }
+    buf_local->clear();
     if (!::OpenClipboard(NULL))
         return NULL;
     HANDLE wbuf_handle = ::GetClipboardData(CF_UNICODETEXT);
@@ -9803,12 +9810,12 @@ static const char* GetClipboardTextFn_DefaultImpl(void*)
     if (const WCHAR* wbuf_global = (const WCHAR*)::GlobalLock(wbuf_handle))
     {
         int buf_len = ::WideCharToMultiByte(CP_UTF8, 0, wbuf_global, -1, NULL, 0, NULL, NULL);
-        buf_local.resize(buf_len);
-        ::WideCharToMultiByte(CP_UTF8, 0, wbuf_global, -1, buf_local.Data, buf_len, NULL, NULL);
+        buf_local->resize(buf_len);
+        ::WideCharToMultiByte(CP_UTF8, 0, wbuf_global, -1, buf_local->Data, buf_len, NULL, NULL);
     }
     ::GlobalUnlock(wbuf_handle);
     ::CloseClipboard();
-    return buf_local.Data;
+    return buf_local->Data;
 }
 
 static void SetClipboardTextFn_DefaultImpl(void*, const char* text)
@@ -9843,7 +9850,7 @@ static void SetClipboardTextFn_DefaultImpl(void*, const char* text)
     if (!main_clipboard)
         PasteboardCreate(kPasteboardClipboard, &main_clipboard);
     PasteboardClear(main_clipboard);
-    CFDataRef cf_data = CFDataCreate(kCFAllocatorDefault, (const UInt8*)text, strlen(text));
+    CFDataRef cf_data = CFDataCreate(kCFAllocatorDefault, (const UInt8*)text, eStrLength(text));
     if (cf_data)
     {
         PasteboardPutItemFlavor(main_clipboard, (PasteboardItemID)1, CFSTR("public.utf8-plain-text"), cf_data, 0);
@@ -9896,9 +9903,9 @@ static void SetClipboardTextFn_DefaultImpl(void*, const char* text)
 {
     ImGuiContext& g = *GImGui;
     g.PrivateClipboard.clear();
-    const char* text_end = text + strlen(text);
+    const char* text_end = text + eStrLength(text);
     g.PrivateClipboard.resize((int)(text_end - text) + 1);
-    memcpy(&g.PrivateClipboard[0], text, (size_t)(text_end - text));
+    eMemCopy(&g.PrivateClipboard[0], text, (size_t)(text_end - text));
     g.PrivateClipboard[(int)(text_end - text)] = 0;
 }
 

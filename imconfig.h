@@ -12,11 +12,22 @@
 //-----------------------------------------------------------------------------
 
 #pragma once
+#include "sys_builddefines.h"
+#include "extern/Enigma/eshared/system/system.hpp"
+#include "extern/Enigma/eshared/math/math.hpp"
+#include "system/sys_file.hpp"
+#include "system/sys_print.hpp"
+#include "generics/sort.hpp"
+
 
 //---- Define assertion handler. Defaults to calling assert().
 // If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
-//#define IM_ASSERT(_EXPR)  MyAssert(_EXPR)
-//#define IM_ASSERT(_EXPR)  ((void)(_EXPR))     // Disable asserts
+#if defined( PROUT_ENABLE_ASSERTS )
+#include "system/sys_assert.hpp"
+#define IM_ASSERT(_EXPR)  passert( _EXPR, "IMGUI ASSERT" )
+#else 
+#define IM_ASSERT(_EXPR)  ((void)(_EXPR))     // Disable asserts
+#endif // defined( PROUT_ENABLE_ASSERTS )
 
 //---- Define attributes of all API symbols declarations, e.g. for DLL under Windows
 // Using dear imgui via a shared library is not recommended, because of function call overhead and because we don't guarantee backward nor forward ABI compatibility.
@@ -24,11 +35,13 @@
 //#define IMGUI_API __declspec( dllimport )
 
 //---- Don't define obsolete functions/enums/behaviors. Consider enabling from time to time after updating to avoid using soon-to-be obsolete function/names.
-//#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
 
 //---- Disable all of Dear ImGui or don't implement standard windows.
 // It is very strongly recommended to NOT disable the demo windows during development. Please read comments in imgui_demo.cpp.
-//#define IMGUI_DISABLE                                     // Disable everything: all headers and source files will be empty.
+#if !defined ( PROUT_IMGUI )
+#define IMGUI_DISABLE // Disable everything: all headers and source files will be empty.
+#endif // !defined ( PROUT_IMGUI )
 //#define IMGUI_DISABLE_DEMO_WINDOWS                        // Disable demo windows: ShowDemoWindow()/ShowStyleEditor() will be empty. Not recommended.
 //#define IMGUI_DISABLE_METRICS_WINDOW                      // Disable debug/metrics window: ShowMetricsWindow() will be empty.
 
@@ -38,9 +51,32 @@
 //#define IMGUI_DISABLE_WIN32_FUNCTIONS                     // [Win32] Won't use and link with any Win32 function (clipboard, ime).
 //#define IMGUI_ENABLE_OSX_DEFAULT_CLIPBOARD_FUNCTIONS      // [OSX] Implement default OSX clipboard handler (need to link with '-framework ApplicationServices', this is why this is not the default).
 //#define IMGUI_DISABLE_DEFAULT_FORMAT_FUNCTIONS            // Don't implement ImFormatString/ImFormatStringV so you can implement them yourself (e.g. if you don't want to link with vsnprintf)
-//#define IMGUI_DISABLE_DEFAULT_MATH_FUNCTIONS              // Don't implement ImFabs/ImSqrt/ImPow/ImFmod/ImCos/ImSin/ImAcos/ImAtan2 so you can implement them yourself.
-//#define IMGUI_DISABLE_DEFAULT_FILE_FUNCTIONS              // Don't implement ImFileOpen/ImFileClose/ImFileRead/ImFileWrite so you can implement them yourself if you don't want to link with fopen/fclose/fread/fwrite. This will also disable the LogToTTY() function.
-//#define IMGUI_DISABLE_DEFAULT_ALLOCATORS                  // Don't implement default allocators calling malloc()/free() to avoid linking with them. You will need to call ImGui::SetAllocatorFunctions().
+#define IMGUI_DISABLE_DEFAULT_MATH_FUNCTIONS              // Don't implement ImFabs/ImSqrt/ImPow/ImFmod/ImCos/ImSin/ImAcos/ImAtan2 so you can implement them yourself.
+#define IMGUI_DISABLE_DEFAULT_FILE_FUNCTIONS              // Don't implement ImFileOpen/ImFileClose/ImFileRead/ImFileWrite so you can implement them yourself if you don't want to link with fopen/fclose/fread/fwrite. This will also disable the LogToTTY() function.
+#define IMGUI_DISABLE_DEFAULT_ALLOCATORS                  // Don't implement default allocators calling malloc()/free() to avoid linking with them. You will need to call ImGui::SetAllocatorFunctions().
+#define IMGUI_DISABLE_TTY_FUNCTIONS // Disable fflush
+
+
+// Enigma math functions
+#define ImFabs(X)           eAbs(X)
+#define ImSqrt(X)           eSqrt(X)
+#define ImFmod(X, Y)        eMod((X), (Y))
+#define ImCos(X)            eCos(X)
+#define ImSin(X)            eSin(X)
+#define ImAcos(X)           eACos(X)
+#define ImAtan2(Y, X)       eATan2((Y), (X))
+#define ImAtof(STR)         eStrToFloat(STR)
+#define ImFloorStd(X)       eFloor(X)           // We already uses our own ImFloor() { return (float)(int)v } internally so the standard one wrapper is named differently (it's used by e.g. stb_truetype)
+#define ImCeil(X)           eCeil(X)
+#define ImPow( x, y ) ePow( x, y ) // DragBehaviorT/SliderBehaviorT uses ImPow with either float/double and need the precision
+
+// Sys files functions
+typedef Sys_FileHandle ImFileHandle;
+inline ImFileHandle  ImFileOpen( const char* _filename, const char* _mode ) { return Sys_FileOpen( _filename, _mode ); }
+inline bool          ImFileClose( ImFileHandle _handle ) { return Sys_FileClose( _handle ); }
+inline eU64         ImFileGetSize( ImFileHandle _handle ) { return Sys_FileGetSize( _handle ); }
+inline eU64         ImFileRead( void* _dstBuffer, eU64 _size, eU64 _count, ImFileHandle _handle ) { return Sys_FileRead( _dstBuffer, _size * _count, _handle ); }
+inline eU64         ImFileWrite( const void* _srcBuffer, eU64 _size, eU64 _count, ImFileHandle _handle ) { return Sys_FileWrite( _srcBuffer, _size * _count, _handle ); }
 
 //---- Include imgui_user.h at the end of imgui.h as a convenience
 //#define IMGUI_INCLUDE_IMGUI_USER_H

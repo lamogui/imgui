@@ -456,9 +456,9 @@ int main(int arg, char **argv)
    #endif
 
    #ifndef STBTT_cos
-   #include <math.h>
-   #define STBTT_cos(x)       cos(x)
-   #define STBTT_acos(x)      acos(x)
+   //#include <math.h>
+   #define STBTT_cos(x)       eCos(x)
+   #define STBTT_acos(x)      eACos(x)
    #endif
 
    #ifndef STBTT_fabs
@@ -479,14 +479,14 @@ int main(int arg, char **argv)
    #endif
 
    #ifndef STBTT_strlen
-   #include <string.h>
-   #define STBTT_strlen(x)    strlen(x)
+   //#include <string.h>
+   #define STBTT_strlen(x)    eStrLength(x)
    #endif
 
    #ifndef STBTT_memcpy
-   #include <string.h>
-   #define STBTT_memcpy       memcpy
-   #define STBTT_memset       memset
+   //#include <string.h>
+   #define STBTT_memcpy       eMemCopy
+   #define STBTT_memset       eMemSet
    #endif
 #endif
 

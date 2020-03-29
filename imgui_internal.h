@@ -32,9 +32,9 @@ Index of this file:
 #error Must include imgui.h before imgui_internal.h
 #endif
 
-#include <stdio.h>      // FILE*, sscanf
-#include <stdlib.h>     // NULL, malloc, free, qsort, atoi, atof
-#include <math.h>       // sqrtf, fabsf, fmodf, powf, floorf, ceilf, cosf, sinf
+//#include <stdio.h>      // FILE*, sscanf
+//#include <stdlib.h>     // NULL, malloc, free, qsort, atoi, atof
+//#include <math.h>       // sqrtf, fabsf, fmodf, powf, floorf, ceilf, cosf, sinf
 #include <limits.h>     // INT_MIN, INT_MAX
 
 // Visual Studio warnings
@@ -147,7 +147,7 @@ extern IMGUI_API ImGuiContext* GImGui;  // Current implicit context pointer
 
 // Debug Logging
 #ifndef IMGUI_DEBUG_LOG
-#define IMGUI_DEBUG_LOG(_FMT,...)       printf("[%05d] " _FMT, GImGui->FrameCount, __VA_ARGS__)
+#define IMGUI_DEBUG_LOG(_FMT,...)       pPrintf("[%05d] " _FMT, GImGui->FrameCount, __VA_ARGS__)
 #endif
 
 // Static Asserts
@@ -211,7 +211,7 @@ extern IMGUI_API ImGuiContext* GImGui;  // Current implicit context pointer
 //-----------------------------------------------------------------------------
 
 // Helpers: Misc
-#define ImQsort         qsort
+#define ImQsort         prout_qsort
 IMGUI_API ImU32         ImHashData(const void* data, size_t data_size, ImU32 seed = 0);
 IMGUI_API ImU32         ImHashStr(const char* data, size_t data_size = 0, ImU32 seed = 0);
 #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
@@ -321,6 +321,8 @@ template<typename T> static inline T ImMin(T lhs, T rhs)                        
 template<typename T> static inline T ImMax(T lhs, T rhs)                        { return lhs >= rhs ? lhs : rhs; }
 template<typename T> static inline T ImClamp(T v, T mn, T mx)                   { return (v < mn) ? mn : (v > mx) ? mx : v; }
 template<typename T> static inline T ImLerp(T a, T b, float t)                  { return (T)(a + (b - a) * t); }
+template<> static inline unsigned int ImLerp< unsigned int >( unsigned int a, unsigned int b, float t ) { return eFtoL(a + (b - a) * t); }
+template<> static inline int ImLerp< int >( int a, int b, float t ) { return eFtoL( a + (b - a) * t ); }
 template<typename T> static inline void ImSwap(T& a, T& b)                      { T tmp = a; a = b; b = tmp; }
 template<typename T> static inline T ImAddClampOverflow(T a, T b, T mn, T mx)   { if (b < 0 && (a < mn - b)) return mn; if (b > 0 && (a > mx - b)) return mx; return a + b; }
 template<typename T> static inline T ImSubClampOverflow(T a, T b, T mn, T mx)   { if (b > 0 && (a < mn + b)) return mn; if (b < 0 && (a > mx + b)) return mx; return a - b; }
@@ -335,8 +337,8 @@ static inline float  ImSaturate(float f)                                        
 static inline float  ImLengthSqr(const ImVec2& lhs)                             { return lhs.x*lhs.x + lhs.y*lhs.y; }
 static inline float  ImLengthSqr(const ImVec4& lhs)                             { return lhs.x*lhs.x + lhs.y*lhs.y + lhs.z*lhs.z + lhs.w*lhs.w; }
 static inline float  ImInvLength(const ImVec2& lhs, float fail_value)           { float d = lhs.x*lhs.x + lhs.y*lhs.y; if (d > 0.0f) return 1.0f / ImSqrt(d); return fail_value; }
-static inline float  ImFloor(float f)                                           { return (float)(int)(f); }
-static inline ImVec2 ImFloor(const ImVec2& v)                                   { return ImVec2((float)(int)(v.x), (float)(int)(v.y)); }
+static inline float  ImFloor(float f)                                           { return eFloor(f); }
+static inline ImVec2 ImFloor(const ImVec2& v)                                   { return ImVec2(eFloor(v.x), eFloor(v.y)); }
 static inline int    ImModPositive(int a, int b)                                { return (a + b) % b; }
 static inline float  ImDot(const ImVec2& a, const ImVec2& b)                    { return a.x * b.x + a.y * b.y; }
 static inline ImVec2 ImRotate(const ImVec2& v, float cos_a, float sin_a)        { return ImVec2(v.x * cos_a - v.y * sin_a, v.x * sin_a + v.y * cos_a); }
@@ -375,7 +377,7 @@ inline void          ImBitArraySetBitRange(ImU32* arr, int n, int n2)
 struct IMGUI_API ImBitVector
 {
     ImVector<ImU32> Storage;
-    void            Create(int sz)              { Storage.resize((sz + 31) >> 5); memset(Storage.Data, 0, (size_t)Storage.Size * sizeof(Storage.Data[0])); }
+    void            Create(int sz)              { Storage.resize((sz + 31) >> 5); eMemSet(Storage.Data, 0, (size_t)Storage.Size * sizeof(Storage.Data[0])); }
     void            Clear()                     { Storage.clear(); }
     bool            TestBit(int n) const        { IM_ASSERT(n < (Storage.Size << 5)); return ImBitArrayTestBit(Storage.Data, n); }
     void            SetBit(int n)               { IM_ASSERT(n < (Storage.Size << 5)); ImBitArraySetBit(Storage.Data, n); }
@@ -787,7 +789,7 @@ struct IMGUI_API ImGuiInputTextState
     ImGuiInputTextCallback  UserCallback;           // "
     void*                   UserCallbackData;       // "
 
-    ImGuiInputTextState()                   { memset(this, 0, sizeof(*this)); }
+    ImGuiInputTextState()                   { eMemSet(this, 0, sizeof(*this)); }
     void        ClearText()                 { CurLenW = CurLenA = 0; TextW[0] = 0; TextA[0] = 0; CursorClamp(); }
     void        ClearFreeMemory()           { TextW.clear(); TextA.clear(); InitialTextA.clear(); }
     int         GetUndoAvailCount() const   { return Stb.undostate.undo_point; }
@@ -825,7 +827,7 @@ struct ImGuiSettingsHandler
     void        (*WriteAllFn)(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* out_buf);      // Write: Output every entries into 'out_buf'
     void*       UserData;
 
-    ImGuiSettingsHandler() { memset(this, 0, sizeof(*this)); }
+    ImGuiSettingsHandler() { eMemSet(this, 0, sizeof(*this)); }
 };
 
 // Storage for current popup stack
@@ -969,7 +971,7 @@ struct ImGuiNextWindowData
     float                       BgAlphaVal;             // Override background alpha
     ImVec2                      MenuBarOffsetMinVal;    // *Always on* This is not exposed publicly, so we don't clear it.
 
-    ImGuiNextWindowData()       { memset(this, 0, sizeof(*this)); }
+    ImGuiNextWindowData()       { eMemSet(this, 0, sizeof(*this)); }
     inline void ClearFlags()    { Flags = ImGuiNextWindowDataFlags_None; }
 };
 
@@ -988,7 +990,7 @@ struct ImGuiNextItemData
     ImGuiCond                   OpenCond;
     bool                        OpenVal;        // Set by SetNextItemOpen()
 
-    ImGuiNextItemData()         { memset(this, 0, sizeof(*this)); }
+    ImGuiNextItemData()         { eMemSet(this, 0, sizeof(*this)); }
     inline void ClearFlags()    { Flags = ImGuiNextItemDataFlags_None; } // Also cleared manually by ItemAdd()!
 };
 
@@ -1316,7 +1318,7 @@ struct ImGuiContext
         DragDropAcceptIdCurrRectSurface = 0.0f;
         DragDropAcceptIdPrev = DragDropAcceptIdCurr = 0;
         DragDropAcceptFrameCount = -1;
-        memset(DragDropPayloadBufLocal, 0, sizeof(DragDropPayloadBufLocal));
+        eMemSet(DragDropPayloadBufLocal, 0, sizeof(DragDropPayloadBufLocal));
 
         CurrentTabBar = NULL;
 
@@ -1347,11 +1349,11 @@ struct ImGuiContext
         DebugItemPickerActive = false;
         DebugItemPickerBreakId = 0;
 
-        memset(FramerateSecPerFrame, 0, sizeof(FramerateSecPerFrame));
+        eMemSet(FramerateSecPerFrame, 0, sizeof(FramerateSecPerFrame));
         FramerateSecPerFrameIdx = 0;
         FramerateSecPerFrameAccum = 0.0f;
         WantCaptureMouseNextFrame = WantCaptureKeyboardNextFrame = WantTextInputNextFrame = -1;
-        memset(TempBuffer, 0, sizeof(TempBuffer));
+        eMemSet(TempBuffer, 0, sizeof(TempBuffer));
     }
 };
 
@@ -1448,7 +1450,7 @@ struct IMGUI_API ImGuiWindowTempData
         ItemFlags = ImGuiItemFlags_Default_;
         ItemWidth = 0.0f;
         TextWrapPos = -1.0f;
-        memset(StackSizesBackup, 0, sizeof(StackSizesBackup));
+        eMemSet(StackSizesBackup, 0, sizeof(StackSizesBackup));
     }
 };
 
