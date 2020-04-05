@@ -13,8 +13,9 @@
 
 #pragma once
 #include "sys_builddefines.h"
-#include "extern/Enigma/eshared/system/system.hpp"
-#include "extern/Enigma/eshared/math/math.hpp"
+#include "extern/Enigma/eshared/system/types.hpp"
+#include "extern/Enigma/eshared/system/runtime.hpp"
+#include "extern/Enigma/eshared/math/vector.hpp"
 #include "system/sys_file.hpp"
 #include "system/sys_print.hpp"
 #include "generics/sort.hpp"

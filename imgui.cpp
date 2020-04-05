@@ -983,7 +983,8 @@ ImGuiContext*   GImGui = NULL;
 static void*   MallocWrapper(size_t size, void* user_data)    { IM_UNUSED(user_data); return malloc(size); }
 static void    FreeWrapper(void* ptr, void* user_data)        { IM_UNUSED(user_data); free(ptr); }
 #else
-#include "extern/Enigma/eshared/system/system.hpp"
+#include "extern/Enigma/eshared/system/types.hpp"
+#include "extern/Enigma/eshared/system/runtime.hpp"
 static void*   MallocWrapper(size_t size, void* user_data)    { IM_UNUSED(user_data); return new eU8[ size ]; }
 static void    FreeWrapper(void* ptr, void* user_data)        { IM_UNUSED(user_data); delete[] ptr; }
 #endif
