@@ -7,13 +7,10 @@
 //  [X] Platform: Keyboard arrays indexed using VK_* Virtual Key Codes, e.g. ImGui::IsKeyPressed(VK_SPACE).
 //  [X] Platform: Gamepad support. Enabled with 'io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad'.
 
-#include "imgui.h"
 #include "imgui_impl_win32.h"
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#include <tchar.h>
+#include "system/sys_defines.h"
+#ifdef PROUT_WIN32
+#include "platforms/win32/sys_win32.h"
 
 // Using XInput library for gamepad (with recent Windows SDK this may leads to executables which won't run on Windows 7)
 #ifndef IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
@@ -265,15 +262,13 @@ void    ImGui_ImplWin32_NewFrame()
 // Generally you may always pass all inputs to Dear ImGui, and hide them from your application based on those two flags.
 // PS: In this Win32 handler, we use the capture API (GetCapture/SetCapture/ReleaseCapture) to be able to read mouse coordinates when dragging mouse outside of our window bounds.
 // PS: We treat DBLCLK messages as regular mouse down messages, so this code will work on windows classes that have the CS_DBLCLKS flag set. Our own example app code doesn't set this flag.
-#if 0
-// Copy this line into your .cpp file to forward declare the function.
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-#endif
-IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam, bool & _usedMsg)
 {
+    _usedMsg = false;
     if (ImGui::GetCurrentContext() == NULL)
         return 0;
 
+    _usedMsg = true;
     ImGuiIO& io = ImGui::GetIO();
     switch (msg)
     {
@@ -337,6 +332,7 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
             g_WantUpdateHasGamepad = true;
         return 0;
     }
+    _usedMsg = false;
     return 0;
 }
 
@@ -439,3 +435,4 @@ float ImGui_ImplWin32_GetDpiScaleForHwnd(void* hwnd)
 }
 
 //---------------------------------------------------------------------------------------------------------
+#endif // PROUT_WIN32
