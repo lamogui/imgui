@@ -25,7 +25,7 @@
 // If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
 #if defined( PROUT_ENABLE_ASSERTS )
 #include "system/sys_assert.hpp"
-#define IM_ASSERT(_EXPR)  passert( _EXPR, "IMGUI ASSERT" )
+#define IM_ASSERT(_EXPR)  passert( "IMGUI ASSERT", _EXPR )
 #else 
 #define IM_ASSERT(_EXPR)  ((void)(_EXPR))     // Disable asserts
 #endif // defined( PROUT_ENABLE_ASSERTS )

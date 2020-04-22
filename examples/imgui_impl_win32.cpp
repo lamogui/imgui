@@ -9,7 +9,7 @@
 
 #include "imgui_impl_win32.h"
 #include "system/sys_defines.h"
-#ifdef PROUT_WIN32
+#if defined( PROUT_WIN32 ) && !defined( IMGUI_DISABLE )
 #include "platforms/win32/sys_win32.h"
 
 // Using XInput library for gamepad (with recent Windows SDK this may leads to executables which won't run on Windows 7)

@@ -10,7 +10,7 @@
 #pragma once
 #include "extern/imgui/imgui.h"
 #include "system/sys_defines.h" // for PROUT_WIN32
-#ifdef PROUT_WIN32
+#if defined( PROUT_WIN32 ) && !defined( IMGUI_DISABLE )
 
 IMGUI_IMPL_API bool     ImGui_ImplWin32_Init(void* hwnd);
 IMGUI_IMPL_API void     ImGui_ImplWin32_Shutdown();
@@ -37,4 +37,4 @@ IMGUI_IMPL_API void     ImGui_ImplWin32_EnableDpiAwareness();
 IMGUI_IMPL_API float    ImGui_ImplWin32_GetDpiScaleForHwnd(void* hwnd);       // HWND hwnd
 IMGUI_IMPL_API float    ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor); // HMONITOR monitor
 
-#endif // PROUT_WIN32
+#endif // defined( PROUT_WIN32 ) && !defined( IMGUI_DISABLE )
