@@ -51,8 +51,10 @@
 
 // Win32 Data
 static HWND                 g_hWnd = NULL;
+#ifdef PROUT_SUPPORT_64BIT_INTEGERS
 static INT64                g_Time = 0;
 static INT64                g_TicksPerSecond = 0;
+#endif // PROUT_SUPPORT_64BIT_INTEGERS
 static ImGuiMouseCursor     g_LastMouseCursor = ImGuiMouseCursor_COUNT;
 static bool                 g_HasGamepad = false;
 static bool                 g_WantUpdateHasGamepad = true;
@@ -60,10 +62,12 @@ static bool                 g_WantUpdateHasGamepad = true;
 // Functions
 bool    ImGui_ImplWin32_Init(void* hwnd)
 {
+#ifdef PROUT_SUPPORT_64BIT_INTEGERS
     if (!::QueryPerformanceFrequency((LARGE_INTEGER *)&g_TicksPerSecond))
         return false;
     if (!::QueryPerformanceCounter((LARGE_INTEGER *)&g_Time))
         return false;
+#endif // PROUT_SUPPORT_64BIT_INTEGERS
 
     // Setup back-end capabilities flags
     g_hWnd = (HWND)hwnd;
@@ -164,7 +168,7 @@ static void ImGui_ImplWin32_UpdateGamepads()
 {
 #ifndef IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
     ImGuiIO& io = ImGui::GetIO();
-    memset(io.NavInputs, 0, sizeof(io.NavInputs));
+    eMemSet(io.NavInputs, 0, sizeof(io.NavInputs));
     if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
         return;
 
@@ -219,10 +223,16 @@ void    ImGui_ImplWin32_NewFrame()
     io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
 
     // Setup time step
+    
+#ifdef PROUT_SUPPORT_64BIT_INTEGERS
     INT64 current_time;
     ::QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-    io.DeltaTime = (float)(current_time - g_Time) / g_TicksPerSecond;
+    io.DeltaTime = (float)( current_time - g_Time / g_TicksPerSecond );
     g_Time = current_time;
+#else
+    io.DeltaTime = 0.0166f; // force 60Hz waiting for better solution
+#endif // PROUT_SUPPORT_64BIT_INTEGERS
+    
 
     // Read keyboard modifiers inputs
     io.KeyCtrl = (::GetKeyState(VK_CONTROL) & 0x8000) != 0;
@@ -355,7 +365,14 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARA
 #if !defined(_versionhelpers_H_INCLUDED_) && !defined(_INC_VERSIONHELPERS)
 static BOOL IsWindowsVersionOrGreater(WORD major, WORD minor, WORD sp)
 {
-    OSVERSIONINFOEXW osvi = { sizeof(osvi), major, minor, 0, 0, { 0 }, sp };
+    OSVERSIONINFOEXW osvi;
+    osvi.dwOSVersionInfoSize = sizeof(osvi);
+    osvi.dwMajorVersion = major;
+    osvi.dwMinorVersion = minor;
+    osvi.dwBuildNumber = 0;
+    osvi.dwPlatformId = 0 ;
+    eMemSet( &osvi.szCSDVersion[ 0 ], 0, sizeof( 128 * sizeof( WCHAR ) ) );
+    osvi.wServicePackMajor = sp;
     DWORD mask = VER_MAJORVERSION | VER_MINORVERSION | VER_SERVICEPACKMAJOR;
     ULONGLONG cond = ::VerSetConditionMask(0, VER_MAJORVERSION, VER_GREATER_EQUAL);
     cond = ::VerSetConditionMask(cond, VER_MINORVERSION, VER_GREATER_EQUAL);
@@ -385,7 +402,10 @@ void ImGui_ImplWin32_EnableDpiAwareness()
 {
     // if (IsWindows10OrGreater()) // This needs a manifest to succeed. Instead we try to grab the function pointer!
     {
-        static HINSTANCE user32_dll = ::LoadLibraryA("user32.dll"); // Reference counted per-process
+        static HINSTANCE user32_dll = nullptr; // Avoid TLS array
+        if (user32_dll == nullptr) {
+            user32_dll = ::LoadLibraryA("user32.dll"); // Reference counted per-process
+        }
         if (PFN_SetThreadDpiAwarenessContext SetThreadDpiAwarenessContextFn = (PFN_SetThreadDpiAwarenessContext)::GetProcAddress(user32_dll, "SetThreadDpiAwarenessContext"))
         {
             SetThreadDpiAwarenessContextFn(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -394,7 +414,10 @@ void ImGui_ImplWin32_EnableDpiAwareness()
     }
     if (IsWindows8Point1OrGreater())
     {
-        static HINSTANCE shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        static HINSTANCE shcore_dll = nullptr; // Avoid a TLS array
+        if ( shcore_dll == nullptr ) {
+            shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        }
         if (PFN_SetProcessDpiAwareness SetProcessDpiAwarenessFn = (PFN_SetProcessDpiAwareness)::GetProcAddress(shcore_dll, "SetProcessDpiAwareness"))
         {
             SetProcessDpiAwarenessFn(PROCESS_PER_MONITOR_DPI_AWARE);
@@ -413,7 +436,10 @@ float ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor)
     UINT xdpi = 96, ydpi = 96;
     if (IsWindows8Point1OrGreater())
     {
-        static HINSTANCE shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        static HINSTANCE shcore_dll = nullptr; // Avoid a TLS array
+        if (shcore_dll == nullptr) {
+            shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        }
         if (PFN_GetDpiForMonitor GetDpiForMonitorFn = (PFN_GetDpiForMonitor)::GetProcAddress(shcore_dll, "GetDpiForMonitor"))
             GetDpiForMonitorFn((HMONITOR)monitor, MDT_EFFECTIVE_DPI, &xdpi, &ydpi);
     }
