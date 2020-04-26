@@ -28,6 +28,7 @@
 //  2016-05-07: DirectX11: Disabling depth-write.
 
 #include "extern/imgui/imgui.h"
+#ifndef IMGUI_DISABLE
 #include "extern/imgui/examples/imgui_impl_dx11.h"
 
 // DirectX
@@ -673,3 +674,5 @@ static void ImGui_ImplDX11_ShutdownPlatformInterface()
 {
     ImGui::DestroyPlatformWindows();
 }
+
+#endif // IMGUI_DISABLE

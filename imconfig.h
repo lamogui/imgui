@@ -15,6 +15,7 @@
 #include "sys_builddefines.h"
 #include "extern/Enigma/eshared/system/types.hpp"
 #include "extern/Enigma/eshared/system/runtime.hpp"
+#include "extern/Enigma/eshared/system/string.hpp"
 #include "extern/Enigma/eshared/math/vector.hpp"
 #include "system/sys_file.hpp"
 #include "system/sys_print.hpp"
@@ -45,6 +46,8 @@
 #endif // !defined ( PROUT_IMGUI )
 //#define IMGUI_DISABLE_DEMO_WINDOWS                        // Disable demo windows: ShowDemoWindow()/ShowStyleEditor() will be empty. Not recommended.
 //#define IMGUI_DISABLE_METRICS_WINDOW                      // Disable debug/metrics window: ShowMetricsWindow() will be empty.
+
+#ifndef IMGUI_DISABLE
 
 //---- Don't implement some functions to reduce linkage requirements.
 //#define IMGUI_DISABLE_WIN32_DEFAULT_CLIPBOARD_FUNCTIONS   // [Win32] Don't implement default clipboard handler. Won't use and link with OpenClipboard/GetClipboardData/CloseClipboard etc.
@@ -143,3 +146,5 @@ namespace ImGui
     void MyFunction(const char* name, const MyMatrix44& v);
 }
 */
+
+#endif // IMGUI_DISABLE
