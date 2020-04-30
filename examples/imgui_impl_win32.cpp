@@ -9,7 +9,6 @@
 //  [X] Platform: Multi-viewport support (multiple windows). Enable with 'io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable'.
 
 #include "imgui_impl_win32.h"
-#include "system/sys_defines.h"
 #if defined( PROUT_WIN32 ) && !defined( IMGUI_DISABLE )
 #include "platforms/win32/sys_win32.h"
 
