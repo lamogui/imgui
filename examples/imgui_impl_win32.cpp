@@ -309,7 +309,7 @@ void    ImGui_ImplWin32_NewFrame()
 #ifdef PROUT_SUPPORT_64BIT_INTEGERS
     INT64 current_time;
     ::QueryPerformanceCounter((LARGE_INTEGER *)&current_time);
-    io.DeltaTime = (float)( current_time - g_Time / g_TicksPerSecond );
+    io.DeltaTime = (float)( (double) ( current_time - g_Time ) / (double) g_TicksPerSecond );
     g_Time = current_time;
 #else
     io.DeltaTime = 0.0166f; // force 60Hz waiting for better solution
