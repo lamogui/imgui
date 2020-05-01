@@ -13,13 +13,14 @@
 
 #pragma once
 #include "sys_builddefines.h"
-#include "extern/Enigma/eshared/system/types.hpp"
-#include "extern/Enigma/eshared/system/runtime.hpp"
+#include "system/types.hpp"
+#include "system/memory.hpp"
 #include "generics/text/string.hpp"
 #include "generics/math/vec.hpp"
 #include "system/sys_file.hpp"
 #include "system/sys_print.hpp"
 #include "generics/containers/sort.hpp"
+#include "generics/math/math.hpp"
 
 
 //---- Define assertion handler. Defaults to calling assert().
