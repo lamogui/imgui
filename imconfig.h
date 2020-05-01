@@ -15,11 +15,11 @@
 #include "sys_builddefines.h"
 #include "extern/Enigma/eshared/system/types.hpp"
 #include "extern/Enigma/eshared/system/runtime.hpp"
-#include "extern/Enigma/eshared/system/string.hpp"
-#include "extern/Enigma/eshared/math/vector.hpp"
+#include "generics/text/string.hpp"
+#include "generics/math/vec.hpp"
 #include "system/sys_file.hpp"
 #include "system/sys_print.hpp"
-#include "generics/sort.hpp"
+#include "generics/containers/sort.hpp"
 
 
 //---- Define assertion handler. Defaults to calling assert().
