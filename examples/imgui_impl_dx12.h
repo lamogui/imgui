@@ -13,8 +13,9 @@
 // https://github.com/ocornut/imgui
 
 #pragma once
-#include "imgui.h"      // IMGUI_IMPL_API
+#include "extern/imgui/imgui.h"      // IMGUI_IMPL_API
 
+#ifndef IMGUI_DISABLE
 enum DXGI_FORMAT;
 struct ID3D12Device;
 struct ID3D12DescriptorHeap;
@@ -35,3 +36,4 @@ IMGUI_IMPL_API void     ImGui_ImplDX12_RenderDrawData(ImDrawData* draw_data, ID3
 // Use if you want to reset your rendering device without losing Dear ImGui state.
 IMGUI_IMPL_API void     ImGui_ImplDX12_InvalidateDeviceObjects();
 IMGUI_IMPL_API bool     ImGui_ImplDX12_CreateDeviceObjects();
+#endif // !IMGUI_DISABLE
