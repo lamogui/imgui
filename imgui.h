@@ -1016,6 +1016,9 @@ namespace ImGui
     IMGUI_API void*         MemAlloc(size_t size);
     IMGUI_API void          MemFree(void* ptr);
 
+    IMGUI_API void          WinAddRect(const ImVec2& min, const ImVec2& max, bool inset);
+    IMGUI_API void          StyleWin98(ImGuiStyle* dst = NULL);
+
     // (Optional) Platform/OS interface for multi-viewport support
     // Read comments around the ImGuiPlatformIO structure for more details.
     // Note: You may use GetWindowViewport() to get the current viewport of the current window.
