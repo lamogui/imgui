@@ -462,7 +462,7 @@ void ImGui::StyleWin98(ImGuiStyle* dst)
     int rect_ids[IM_ARRAYSIZE(run_length)];
     for (int i = 0; i < IM_ARRAYSIZE(run_length); i++) {
         // Starts with unicode multiplication sign and extends
-        rect_ids[i] = io.Fonts->AddCustomRectFontGlyph(font, 215 + i, 12, 9, 13+1);
+        rect_ids[i] = io.Fonts->AddCustomRectFontGlyph(font, (ImWchar)215 + i, 12, 9, 13+1);
     }
 
     io.Fonts->Build();
@@ -474,7 +474,7 @@ void ImGui::StyleWin98(ImGuiStyle* dst)
     for (int i = 0; i < IM_ARRAYSIZE(run_length); i++) {
 
         int rect_id = rect_ids[i];
-        if (const ImFontAtlas::CustomRect* rect = io.Fonts->GetCustomRectByIndex(rect_id)) {
+        if (const ImFontAtlasCustomRect * rect = io.Fonts->GetCustomRectByIndex(rect_id)) {
             bool black = false;
             unsigned char* run = run_length[i];
             int run_size = 0;

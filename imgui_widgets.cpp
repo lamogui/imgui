@@ -716,7 +716,6 @@ bool ImGui::ButtonEx(const char* label, const ImVec2& size_arg, ImGuiButtonFlags
     bool pressed = ButtonBehavior(bb, id, &hovered, &held, flags);
 
     // Render
-    const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
 #ifdef WIN98
     const ImU32 fill_col = GetColorU32(ImGuiCol_WindowBg);
     window->DrawList->AddRectFilled(bb.Min, bb.Max, fill_col, 0.0f);
@@ -726,6 +725,7 @@ bool ImGui::ButtonEx(const char* label, const ImVec2& size_arg, ImGuiButtonFlags
     RenderTextClipped(bb.Min + style.FramePadding, bb.Max - style.FramePadding, label, NULL, &label_size, style.ButtonTextAlign, &bb);
     PopStyleColor();
 #else
+    const ImU32 col = GetColorU32( ( held && hovered ) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button );
     RenderNavHighlight(bb, id);
     RenderFrame(bb.Min, bb.Max, col, true, style.FrameRounding);
 
@@ -826,6 +826,7 @@ bool ImGui::CloseButton(ImGuiID id, const ImVec2& pos)
 
 #ifdef WIN98 // close button size
     const ImRect bb(pos, pos + ImVec2(16.0f, 14.0f));
+    ImRect bb_interact = bb;
 #else
     // Tweak 1: Shrink hit-testing area if button covers an abnormally large proportion of the visible region. That's in order to facilitate moving the window away. (#3825)
     // This may better be applied as a general hit-rect reduction mechanism for all widgets to ensure the area to move window is always accessible?
@@ -834,10 +835,10 @@ bool ImGui::CloseButton(ImGuiID id, const ImVec2& pos)
     const float area_to_visible_ratio = window->OuterRectClipped.GetArea() / bb.GetArea();
     if (area_to_visible_ratio < 1.5f)
         bb_interact.Expand(ImTrunc(bb_interact.GetSize() * -0.25f));
+#endif // WIN98
     // Tweak 2: We intentionally allow interaction when clipped so that a mechanical Alt,Right,Activate sequence can always close a window.
     // (this isn't the common behavior of buttons, but it doesn't affect the user because navigation tends to keep items visible in scrolling layer).
-    is_clipped = !ItemAdd(bb_interact, id);
-#endif // WIN98
+    bool is_clipped = !ItemAdd( bb_interact, id );
 
     bool hovered, held;
     bool pressed = ButtonBehavior(bb_interact, id, &hovered, &held);
@@ -846,24 +847,19 @@ bool ImGui::CloseButton(ImGuiID id, const ImVec2& pos)
 
     // Render
     // FIXME: Clarify this mess
-    ImU32 col = GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
     ImVec2 center = bb.GetCenter();
-
 #ifdef WIN98 // close button
     const ImU32 fill_col = GetColorU32(ImGuiCol_WindowBg);
     window->DrawList->AddRectFilled(bb.Min, bb.Max, fill_col, 0.0f);
     WinAddRect(bb.Min, bb.Max, hovered && held);
+    RenderText( bb.Min + ImVec2( 2.0f, 2.0f ), "\xC3\x97" );
 #else
+    ImU32 col = GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
     if (hovered)
         window->DrawList->AddCircleFilled(center, ImMax(2.0f, g.FontSize * 0.5f + 1.0f), col);
-#endif // WIN98
-
     float cross_extent = g.FontSize * 0.5f * 0.7071f - 1.0f;
-    ImU32 cross_col = GetColorU32(ImGuiCol_Text);
-    center -= ImVec2(0.5f, 0.5f);
-#ifdef WIN98 // close button icon
-    RenderText(bb.Min + ImVec2(2.0f, 2.0f), "\xC3\x97");
-#else
+    center -= ImVec2( 0.5f, 0.5f );
+    ImU32 cross_col = GetColorU32( ImGuiCol_Text );
     window->DrawList->AddLine(center + ImVec2(+cross_extent, +cross_extent), center + ImVec2(-cross_extent, -cross_extent), cross_col, 1.0f);
     window->DrawList->AddLine(center + ImVec2(+cross_extent, -cross_extent), center + ImVec2(-cross_extent, +cross_extent), cross_col, 1.0f);
 #endif // WIN98
@@ -890,8 +886,7 @@ bool ImGui::CollapseButton(ImGuiID id, const ImVec2& pos, ImGuiDockNode* dock_no
 
     // Render
     //bool is_dock_menu = (window->DockNodeAsHost && !window->Collapsed);
-    ImU32 bg_col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
-    ImU32 text_col = GetColorU32(ImGuiCol_Text);
+    ImU32 text_col = GetColorU32( ImGuiCol_Text );
 
 #ifdef WIN98 // collapse button
     const ImU32 fill_col = GetColorU32(ImGuiCol_WindowBg);
@@ -901,6 +896,7 @@ bool ImGui::CollapseButton(ImGuiID id, const ImVec2& pos, ImGuiDockNode* dock_no
     // collapse icon
     RenderText(bb.Min + ImVec2(2.0f, 2.0f), "\xC3\x98");
 #else
+    ImU32 bg_col = GetColorU32( ( held && hovered ) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button );
     if (hovered || held)
         window->DrawList->AddCircleFilled(bb.GetCenter() + ImVec2(0.0f, -0.5f), g.FontSize * 0.5f + 1.0f, bg_col);
 #endif // WIN98
@@ -1060,7 +1056,7 @@ bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, ImS6
 
     // Render
 #ifdef WIN98 // scrollbar
-
+    (void) flags;
     ImRect grab_rect;
     if (axis == ImGuiAxis_X) {
         grab_rect = ImRect(ImLerp(bb.Min.x, bb.Max.x, grab_v_norm), bb.Min.y, ImLerp(bb.Min.x, bb.Max.x, grab_v_norm) + grab_h_pixels, bb.Max.y);
@@ -1074,6 +1070,7 @@ bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, ImS6
         bool held_up = false;
         bool hovered_up = false;
         bool pressed_up = ButtonBehavior(button_bounds, up_id, &hovered_up, &held_up, 0);
+        (void)pressed_up;
         WinAddRect(button_bounds.Min, button_bounds.Max, (held_up && hovered_up));
     }
     {
@@ -1083,6 +1080,7 @@ bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, ImS6
         bool held_down = false;
         bool hovered_down = false;
         bool pressed_down = ButtonBehavior(button_bounds, down_id, &hovered_down, &held_down, 0);
+        (void)pressed_down;
         WinAddRect(button_bounds.Min, button_bounds.Max, (held_down && hovered_down));
     }
 #else
