@@ -894,17 +894,20 @@ bool ImGui::CollapseButton(ImGuiID id, const ImVec2& pos, ImGuiDockNode* dock_no
     WinAddRect(bb.Min, bb.Max, hovered && held);
 
     // collapse icon
-    RenderText(bb.Min + ImVec2(2.0f, 2.0f), "\xC3\x98");
+    if ( dock_node )
+        RenderArrowDockMenu( window->DrawList, bb.Min, g.FontSize, text_col );
+    else
+        RenderText(bb.Min + ImVec2(2.0f, 2.0f), "\xC3\x98");
 #else
     ImU32 bg_col = GetColorU32( ( held && hovered ) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button );
     if (hovered || held)
         window->DrawList->AddCircleFilled(bb.GetCenter() + ImVec2(0.0f, -0.5f), g.FontSize * 0.5f + 1.0f, bg_col);
-#endif // WIN98
 
-    if (dock_node)
-        RenderArrowDockMenu(window->DrawList, bb.Min, g.FontSize, text_col);
+    if ( dock_node )
+        RenderArrowDockMenu( window->DrawList, bb.Min, g.FontSize, text_col );
     else
-        RenderArrow(window->DrawList, bb.Min, text_col, window->Collapsed ? ImGuiDir_Right : ImGuiDir_Down, 1.0f);
+        RenderArrow( window->DrawList, bb.Min, text_col, window->Collapsed ? ImGuiDir_Right : ImGuiDir_Down, 1.0f );
+#endif // WIN98
 
     // Switch to moving the window after mouse is moved beyond the initial drag threshold
     if (IsItemActive() && IsMouseDragging(0))
@@ -1064,6 +1067,7 @@ bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, ImS6
         grab_rect = ImRect(bb.Min.x, ImLerp(bb.Min.y, bb.Max.y, grab_v_norm), bb.Max.x, ImLerp(bb.Min.y, bb.Max.y, grab_v_norm) + grab_h_pixels);
     }
     WinAddRect(grab_rect.Min, grab_rect.Max, false);
+    if ( 0 ) // @lamogui not functionnal and not well rendered
     {
         const ImGuiID up_id = window->GetID("##scrollup");
         ImRect button_bounds(bb_frame.Min, bb_frame.Min + button_size_rect);
@@ -1073,6 +1077,7 @@ bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, ImS6
         (void)pressed_up;
         WinAddRect(button_bounds.Min, button_bounds.Max, (held_up && hovered_up));
     }
+    if ( 0 )
     {
         const ImGuiID down_id = window->GetID("##scrolldown");
         ImVec2 pos = bb_frame.Min + main_axis * (((axis == ImGuiAxis_X) ? bb_frame.GetWidth() : bb_frame.GetHeight()) - button_size);
