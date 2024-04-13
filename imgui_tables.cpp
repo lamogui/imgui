@@ -628,7 +628,7 @@ void ImGui::TableBeginInitMemory(ImGuiTable* table, int columns_count)
     for (int n = 3; n < 6; n++)
         span_allocator.Reserve(n, columns_bit_array_size);
     table->RawData = IM_ALLOC(span_allocator.GetArenaSizeInBytes());
-    memset(table->RawData, 0, span_allocator.GetArenaSizeInBytes());
+    IMGUI_STD_FUNC_NAMESPACE::memset(table->RawData, 0, span_allocator.GetArenaSizeInBytes());
     span_allocator.SetArenaBasePtr(table->RawData);
     span_allocator.GetSpan(0, &table->Columns);
     span_allocator.GetSpan(1, &table->DisplayOrderToIndex);
@@ -1589,7 +1589,7 @@ void ImGui::TableSetupColumn(const char* label, ImGuiTableColumnFlags flags, flo
     if (label != NULL && label[0] != 0)
     {
         column->NameOffset = (ImS16)table->ColumnsNames.size();
-        table->ColumnsNames.append(label, label + strlen(label) + 1);
+        table->ColumnsNames.append(label, label + IMGUI_STD_FUNC_NAMESPACE::strlen(label) + 1);
     }
 }
 
@@ -2502,7 +2502,7 @@ void ImGui::TableMergeDrawChannels(ImGuiTable* table)
     const int max_draw_channels = (4 + table->ColumnsCount * 2);
     const int size_for_masks_bitarrays_one = (int)ImBitArrayGetStorageSizeInBytes(max_draw_channels);
     g.TempBuffer.reserve(size_for_masks_bitarrays_one * 5);
-    memset(g.TempBuffer.Data, 0, size_for_masks_bitarrays_one * 5);
+    IMGUI_STD_FUNC_NAMESPACE::memset(g.TempBuffer.Data, 0, size_for_masks_bitarrays_one * 5);
     for (int n = 0; n < IM_ARRAYSIZE(merge_groups); n++)
         merge_groups[n].ChannelsMask = (ImBitArrayPtr)(void*)(g.TempBuffer.Data + (size_for_masks_bitarrays_one * n));
     ImBitArrayPtr remaining_mask = (ImBitArrayPtr)(void*)(g.TempBuffer.Data + (size_for_masks_bitarrays_one * 4));
@@ -2627,13 +2627,13 @@ void ImGui::TableMergeDrawChannels(ImGuiTable* table)
                     ImDrawChannel* channel = &splitter->_Channels[n];
                     IM_ASSERT(channel->_CmdBuffer.Size == 1 && merge_clip_rect.Contains(ImRect(channel->_CmdBuffer[0].ClipRect)));
                     channel->_CmdBuffer[0].ClipRect = merge_clip_rect.ToVec4();
-                    memcpy(dst_tmp++, channel, sizeof(ImDrawChannel));
+                    IMGUI_STD_FUNC_NAMESPACE::memcpy(dst_tmp++, channel, sizeof(ImDrawChannel));
                 }
             }
 
             // Make sure Bg2DrawChannelUnfrozen appears in the middle of our groups (whereas Bg0/Bg1 and Bg2 frozen are fixed to 0 and 1)
             if (merge_group_n == 1 && has_freeze_v)
-                memcpy(dst_tmp++, &splitter->_Channels[table->Bg2DrawChannelUnfrozen], sizeof(ImDrawChannel));
+                IMGUI_STD_FUNC_NAMESPACE::memcpy(dst_tmp++, &splitter->_Channels[table->Bg2DrawChannelUnfrozen], sizeof(ImDrawChannel));
         }
 
         // Append unmergeable channels that we didn't reorder at the end of the list
@@ -2642,11 +2642,11 @@ void ImGui::TableMergeDrawChannels(ImGuiTable* table)
             if (!IM_BITARRAY_TESTBIT(remaining_mask, n))
                 continue;
             ImDrawChannel* channel = &splitter->_Channels[n];
-            memcpy(dst_tmp++, channel, sizeof(ImDrawChannel));
+            IMGUI_STD_FUNC_NAMESPACE::memcpy(dst_tmp++, channel, sizeof(ImDrawChannel));
             remaining_count--;
         }
         IM_ASSERT(dst_tmp == g.DrawChannelsTempMergeBuffer.Data + g.DrawChannelsTempMergeBuffer.Size);
-        memcpy(splitter->_Channels.Data + LEADING_DRAW_CHANNELS, g.DrawChannelsTempMergeBuffer.Data, (splitter->_Count - LEADING_DRAW_CHANNELS) * sizeof(ImDrawChannel));
+        IMGUI_STD_FUNC_NAMESPACE::memcpy(splitter->_Channels.Data + LEADING_DRAW_CHANNELS, g.DrawChannelsTempMergeBuffer.Data, (splitter->_Count - LEADING_DRAW_CHANNELS) * sizeof(ImDrawChannel));
     }
 }
 
@@ -3673,7 +3673,7 @@ static void* TableSettingsHandler_ReadOpen(ImGuiContext*, ImGuiSettingsHandler*,
 {
     ImGuiID id = 0;
     int columns_count = 0;
-    if (sscanf(name, "0x%08X,%d", &id, &columns_count) < 2)
+    if ( IMGUI_STD_FUNC_NAMESPACE::sscanf(name, "0x%08X,%d", &id, &columns_count) < 2)
         return NULL;
 
     if (ImGuiTableSettings* settings = ImGui::TableSettingsFindByID(id))
@@ -3695,9 +3695,9 @@ static void TableSettingsHandler_ReadLine(ImGuiContext*, ImGuiSettingsHandler*, 
     float f = 0.0f;
     int column_n = 0, r = 0, n = 0;
 
-    if (sscanf(line, "RefScale=%f", &f) == 1) { settings->RefScale = f; return; }
+    if ( IMGUI_STD_FUNC_NAMESPACE::sscanf(line, "RefScale=%f", &f) == 1) { settings->RefScale = f; return; }
 
-    if (sscanf(line, "Column %d%n", &column_n, &r) == 1)
+    if ( IMGUI_STD_FUNC_NAMESPACE::sscanf(line, "Column %d%n", &column_n, &r) == 1)
     {
         if (column_n < 0 || column_n >= settings->ColumnsCount)
             return;
@@ -3705,12 +3705,12 @@ static void TableSettingsHandler_ReadLine(ImGuiContext*, ImGuiSettingsHandler*, 
         char c = 0;
         ImGuiTableColumnSettings* column = settings->GetColumnSettings() + column_n;
         column->Index = (ImGuiTableColumnIdx)column_n;
-        if (sscanf(line, "UserID=0x%08X%n", (ImU32*)&n, &r)==1) { line = ImStrSkipBlank(line + r); column->UserID = (ImGuiID)n; }
-        if (sscanf(line, "Width=%d%n", &n, &r) == 1)            { line = ImStrSkipBlank(line + r); column->WidthOrWeight = (float)n; column->IsStretch = 0; settings->SaveFlags |= ImGuiTableFlags_Resizable; }
-        if (sscanf(line, "Weight=%f%n", &f, &r) == 1)           { line = ImStrSkipBlank(line + r); column->WidthOrWeight = f; column->IsStretch = 1; settings->SaveFlags |= ImGuiTableFlags_Resizable; }
-        if (sscanf(line, "Visible=%d%n", &n, &r) == 1)          { line = ImStrSkipBlank(line + r); column->IsEnabled = (ImU8)n; settings->SaveFlags |= ImGuiTableFlags_Hideable; }
-        if (sscanf(line, "Order=%d%n", &n, &r) == 1)            { line = ImStrSkipBlank(line + r); column->DisplayOrder = (ImGuiTableColumnIdx)n; settings->SaveFlags |= ImGuiTableFlags_Reorderable; }
-        if (sscanf(line, "Sort=%d%c%n", &n, &c, &r) == 2)       { line = ImStrSkipBlank(line + r); column->SortOrder = (ImGuiTableColumnIdx)n; column->SortDirection = (c == '^') ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending; settings->SaveFlags |= ImGuiTableFlags_Sortable; }
+        if (IMGUI_STD_FUNC_NAMESPACE::sscanf(line, "UserID=0x%08X%n", (ImU32*)&n, &r)==1) { line = ImStrSkipBlank(line + r); column->UserID = (ImGuiID)n; }
+        if (IMGUI_STD_FUNC_NAMESPACE::sscanf(line, "Width=%d%n", &n, &r) == 1)            { line = ImStrSkipBlank(line + r); column->WidthOrWeight = (float)n; column->IsStretch = 0; settings->SaveFlags |= ImGuiTableFlags_Resizable; }
+        if (IMGUI_STD_FUNC_NAMESPACE::sscanf(line, "Weight=%f%n", &f, &r) == 1)           { line = ImStrSkipBlank(line + r); column->WidthOrWeight = f; column->IsStretch = 1; settings->SaveFlags |= ImGuiTableFlags_Resizable; }
+        if (IMGUI_STD_FUNC_NAMESPACE::sscanf(line, "Visible=%d%n", &n, &r) == 1)          { line = ImStrSkipBlank(line + r); column->IsEnabled = (ImU8)n; settings->SaveFlags |= ImGuiTableFlags_Hideable; }
+        if (IMGUI_STD_FUNC_NAMESPACE::sscanf(line, "Order=%d%n", &n, &r) == 1)            { line = ImStrSkipBlank(line + r); column->DisplayOrder = (ImGuiTableColumnIdx)n; settings->SaveFlags |= ImGuiTableFlags_Reorderable; }
+        if (IMGUI_STD_FUNC_NAMESPACE::sscanf(line, "Sort=%d%c%n", &n, &c, &r) == 2)       { line = ImStrSkipBlank(line + r); column->SortOrder = (ImGuiTableColumnIdx)n; column->SortDirection = (c == '^') ? ImGuiSortDirection_Descending : ImGuiSortDirection_Ascending; settings->SaveFlags |= ImGuiTableFlags_Sortable; }
     }
 }
 
@@ -3782,8 +3782,8 @@ void ImGui::TableRemove(ImGuiTable* table)
     //IMGUI_DEBUG_PRINT("TableRemove() id=0x%08X\n", table->ID);
     ImGuiContext& g = *GImGui;
     int table_idx = g.Tables.GetIndex(table);
-    //memset(table->RawData.Data, 0, table->RawData.size_in_bytes());
-    //memset(table, 0, sizeof(ImGuiTable));
+    //IMGUI_STD_FUNC_NAMESPACE::memset(table->RawData.Data, 0, table->RawData.size_in_bytes());
+    //IMGUI_STD_FUNC_NAMESPACE::memset(table, 0, sizeof(ImGuiTable));
     g.Tables.Remove(table->ID, table);
     g.TablesLastTimeActive[table_idx] = -1.0f;
 }
@@ -3824,7 +3824,7 @@ void ImGui::TableGcCompactSettings()
     new_chunk_stream.Buf.reserve(required_memory);
     for (ImGuiTableSettings* settings = g.SettingsTables.begin(); settings != NULL; settings = g.SettingsTables.next_chunk(settings))
         if (settings->ID != 0)
-            memcpy(new_chunk_stream.alloc_chunk(TableSettingsCalcChunkSize(settings->ColumnsCount)), settings, TableSettingsCalcChunkSize(settings->ColumnsCount));
+            IMGUI_STD_FUNC_NAMESPACE::memcpy(new_chunk_stream.alloc_chunk(TableSettingsCalcChunkSize(settings->ColumnsCount)), settings, TableSettingsCalcChunkSize(settings->ColumnsCount));
     g.SettingsTables.swap(new_chunk_stream);
 }
 

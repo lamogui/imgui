@@ -110,7 +110,7 @@ struct ImGui_ImplWin32_Data
     PFN_XInputGetState          XInputGetState;
 #endif
 
-    ImGui_ImplWin32_Data()      { memset((void*)this, 0, sizeof(*this)); }
+    ImGui_ImplWin32_Data()      { IMGUI_STD_FUNC_NAMESPACE::memset((void*)this, 0, sizeof(*this)); }
 };
 
 // Backend data stored in io.BackendPlatformUserData to allow support for multiple Dear ImGui contexts
@@ -766,7 +766,8 @@ static BOOL _IsWindowsVersionOrGreater(WORD major, WORD minor, WORD)
     if (RtlVerifyVersionInfoFn == nullptr)
         return FALSE;
 
-    RTL_OSVERSIONINFOEXW versionInfo = { };
+    RTL_OSVERSIONINFOEXW versionInfo;
+    IMGUI_STD_FUNC_NAMESPACE::memset( &versionInfo, 0, sizeof( versionInfo ) );
     ULONGLONG conditionMask = 0;
     versionInfo.dwOSVersionInfoSize = sizeof(RTL_OSVERSIONINFOEXW);
     versionInfo.dwMajorVersion = major;
@@ -801,7 +802,10 @@ void ImGui_ImplWin32_EnableDpiAwareness()
 {
     if (_IsWindows10OrGreater())
     {
-        static HINSTANCE user32_dll = ::LoadLibraryA("user32.dll"); // Reference counted per-process
+        static HINSTANCE user32_dll = nullptr; // @lamogui: Avoid a TLS init
+        if ( user32_dll == nullptr ) {
+            user32_dll = ::LoadLibraryA( "user32.dll" ); // Reference counted per-process
+        }
         if (PFN_SetThreadDpiAwarenessContext SetThreadDpiAwarenessContextFn = (PFN_SetThreadDpiAwarenessContext)::GetProcAddress(user32_dll, "SetThreadDpiAwarenessContext"))
         {
             SetThreadDpiAwarenessContextFn(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -810,7 +814,10 @@ void ImGui_ImplWin32_EnableDpiAwareness()
     }
     if (_IsWindows8Point1OrGreater())
     {
-        static HINSTANCE shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        static HINSTANCE shcore_dll = nullptr; // @lamogui putted nullptr here to avoid a TLS array
+        if ( shcore_dll == nullptr ) {
+            shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        }
         if (PFN_SetProcessDpiAwareness SetProcessDpiAwarenessFn = (PFN_SetProcessDpiAwareness)::GetProcAddress(shcore_dll, "SetProcessDpiAwareness"))
         {
             SetProcessDpiAwarenessFn(PROCESS_PER_MONITOR_DPI_AWARE);
@@ -831,7 +838,10 @@ float ImGui_ImplWin32_GetDpiScaleForMonitor(void* monitor)
     UINT xdpi = 96, ydpi = 96;
     if (_IsWindows8Point1OrGreater())
     {
-		static HINSTANCE shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+		static HINSTANCE shcore_dll = nullptr; // @lamogui putted a nullptr here to avoid TLS array
+        if ( shcore_dll ) {
+            shcore_dll = ::LoadLibraryA("shcore.dll"); // Reference counted per-process
+        }
 		static PFN_GetDpiForMonitor GetDpiForMonitorFn = nullptr;
 		if (GetDpiForMonitorFn == nullptr && shcore_dll != nullptr)
             GetDpiForMonitorFn = (PFN_GetDpiForMonitor)::GetProcAddress(shcore_dll, "GetDpiForMonitor");

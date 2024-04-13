@@ -50,9 +50,11 @@ Index of this file:
 #include "imgui.h"
 #endif
 
+#ifndef IMGUI_NO_STD
 #include <stdio.h>      // FILE*, sscanf
 #include <stdlib.h>     // NULL, malloc, free, qsort, atoi, atof
 #include <math.h>       // sqrtf, fabsf, fmodf, powf, floorf, ceilf, cosf, sinf
+#endif // IMGUI_NO_STD
 #include <limits.h>     // INT_MIN, INT_MAX
 
 // Enable SSE intrinsics if available
@@ -353,7 +355,7 @@ IMGUI_API ImGuiID       ImHashStr(const char* data, size_t data_size = 0, ImGuiI
 
 // Helpers: Sorting
 #ifndef ImQsort
-static inline void      ImQsort(void* base, size_t count, size_t size_of_element, int(IMGUI_CDECL *compare_func)(void const*, void const*)) { if (count > 1) qsort(base, count, size_of_element, compare_func); }
+static inline void      ImQsort(void* base, size_t count, size_t size_of_element, int(IMGUI_CDECL *compare_func)(void const*, void const*)) { if (count > 1) IMGUI_STD_FUNC_NAMESPACE::qsort(base, count, size_of_element, compare_func); }
 #endif
 
 // Helpers: Color Blending
@@ -563,7 +565,7 @@ struct IMGUI_API ImRect
 #define         IM_BITARRAY_TESTBIT(_ARRAY, _N)                 ((_ARRAY[(_N) >> 5] & ((ImU32)1 << ((_N) & 31))) != 0) // Macro version of ImBitArrayTestBit(): ensure args have side-effect or are costly!
 #define         IM_BITARRAY_CLEARBIT(_ARRAY, _N)                ((_ARRAY[(_N) >> 5] &= ~((ImU32)1 << ((_N) & 31))))    // Macro version of ImBitArrayClearBit(): ensure args have side-effect or are costly!
 inline size_t   ImBitArrayGetStorageSizeInBytes(int bitcount)   { return (size_t)((bitcount + 31) >> 5) << 2; }
-inline void     ImBitArrayClearAllBits(ImU32* arr, int bitcount){ memset(arr, 0, ImBitArrayGetStorageSizeInBytes(bitcount)); }
+inline void     ImBitArrayClearAllBits(ImU32* arr, int bitcount){ IMGUI_STD_FUNC_NAMESPACE::memset(arr, 0, ImBitArrayGetStorageSizeInBytes(bitcount)); }
 inline bool     ImBitArrayTestBit(const ImU32* arr, int n)      { ImU32 mask = (ImU32)1 << (n & 31); return (arr[n >> 5] & mask) != 0; }
 inline void     ImBitArrayClearBit(ImU32* arr, int n)           { ImU32 mask = (ImU32)1 << (n & 31); arr[n >> 5] &= ~mask; }
 inline void     ImBitArraySetBit(ImU32* arr, int n)             { ImU32 mask = (ImU32)1 << (n & 31); arr[n >> 5] |= mask; }
@@ -589,8 +591,8 @@ struct ImBitArray
 {
     ImU32           Storage[(BITCOUNT + 31) >> 5];
     ImBitArray()                                { ClearAllBits(); }
-    void            ClearAllBits()              { memset(Storage, 0, sizeof(Storage)); }
-    void            SetAllBits()                { memset(Storage, 255, sizeof(Storage)); }
+    void            ClearAllBits()              { IMGUI_STD_FUNC_NAMESPACE::memset(Storage, 0, sizeof(Storage)); }
+    void            SetAllBits()                { IMGUI_STD_FUNC_NAMESPACE::memset(Storage, 255, sizeof(Storage)); }
     bool            TestBit(int n) const        { n += OFFSET; IM_ASSERT(n >= 0 && n < BITCOUNT); return IM_BITARRAY_TESTBIT(Storage, n); }
     void            SetBit(int n)               { n += OFFSET; IM_ASSERT(n >= 0 && n < BITCOUNT); ImBitArraySetBit(Storage, n); }
     void            ClearBit(int n)             { n += OFFSET; IM_ASSERT(n >= 0 && n < BITCOUNT); ImBitArrayClearBit(Storage, n); }
@@ -603,7 +605,7 @@ struct ImBitArray
 struct IMGUI_API ImBitVector
 {
     ImVector<ImU32> Storage;
-    void            Create(int sz)              { Storage.resize((sz + 31) >> 5); memset(Storage.Data, 0, (size_t)Storage.Size * sizeof(Storage.Data[0])); }
+    void            Create(int sz)              { Storage.resize((sz + 31) >> 5); IMGUI_STD_FUNC_NAMESPACE::memset(Storage.Data, 0, (size_t)Storage.Size * sizeof(Storage.Data[0])); }
     void            Clear()                     { Storage.clear(); }
     bool            TestBit(int n) const        { IM_ASSERT(n < (Storage.Size << 5)); return IM_BITARRAY_TESTBIT(Storage.Data, n); }
     void            SetBit(int n)               { IM_ASSERT(n < (Storage.Size << 5)); ImBitArraySetBit(Storage.Data, n); }
@@ -652,7 +654,7 @@ struct ImSpanAllocator
     int     Offsets[CHUNKS];
     int     Sizes[CHUNKS];
 
-    ImSpanAllocator()                               { memset(this, 0, sizeof(*this)); }
+    ImSpanAllocator()                               { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     inline void  Reserve(int n, size_t sz, int a=4) { IM_ASSERT(n == CurrIdx && n < CHUNKS); CurrOff = IM_MEMALIGN(CurrOff, a); Offsets[n] = CurrOff; Sizes[n] = (int)sz; CurrIdx++; CurrOff += (int)sz; }
     inline int   GetArenaSizeInBytes()              { return CurrOff; }
     inline void  SetArenaBasePtr(void* base_ptr)    { BasePtr = (char*)base_ptr; }
@@ -791,7 +793,7 @@ struct ImDrawDataBuilder
     ImVector<ImDrawList*>*  Layers[2];      // Pointers to global layers for: regular, tooltip. LayersP[0] is owned by DrawData.
     ImVector<ImDrawList*>   LayerData1;
 
-    ImDrawDataBuilder()                     { memset(this, 0, sizeof(*this)); }
+    ImDrawDataBuilder()                     { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 //-----------------------------------------------------------------------------
@@ -1014,7 +1016,7 @@ struct IMGUI_API ImGuiComboPreviewData
     float           BackupPrevLineTextBaseOffset;
     ImGuiLayoutType BackupLayout;
 
-    ImGuiComboPreviewData() { memset(this, 0, sizeof(*this)); }
+    ImGuiComboPreviewData() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 // Stacked storage data for BeginGroup()/EndGroup()
@@ -1047,7 +1049,7 @@ struct IMGUI_API ImGuiMenuColumns
     ImU16       OffsetMark;
     ImU16       Widths[4];          // Width of:   Icon, Label, Shortcut, Mark  (accumulators for current frame)
 
-    ImGuiMenuColumns() { memset(this, 0, sizeof(*this)); }
+    ImGuiMenuColumns() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     void        Update(float spacing, bool window_reappearing);
     float       DeclColumns(float w_icon, float w_label, float w_shortcut, float w_mark);
     void        CalcNextTotalWidth(bool update_offsets);
@@ -1059,7 +1061,7 @@ struct IMGUI_API ImGuiInputTextDeactivatedState
     ImGuiID            ID;              // widget id owning the text state (which just got deactivated)
     ImVector<char>     TextA;           // text buffer
 
-    ImGuiInputTextDeactivatedState()    { memset(this, 0, sizeof(*this)); }
+    ImGuiInputTextDeactivatedState()    { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     void    ClearFreeMemory()           { ID = 0; TextA.clear(); }
 };
 // Internal state of the currently focused/edited text input box
@@ -1085,7 +1087,7 @@ struct IMGUI_API ImGuiInputTextState
     int                     ReloadSelectionStart;   // POSITIONS ARE IN IMWCHAR units *NOT* UTF-8 this is why this is not exposed yet.
     int                     ReloadSelectionEnd;
 
-    ImGuiInputTextState()                   { memset(this, 0, sizeof(*this)); }
+    ImGuiInputTextState()                   { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     void        ClearText()                 { CurLenW = CurLenA = 0; TextW[0] = 0; TextA[0] = 0; CursorClamp(); }
     void        ClearFreeMemory()           { TextW.clear(); TextA.clear(); InitialTextA.clear(); }
     int         GetUndoAvailCount() const   { return Stb.undostate.undo_point; }
@@ -1147,7 +1149,7 @@ struct ImGuiNextWindowData
     float                       BgAlphaVal;             // Override background alpha
     ImVec2                      MenuBarOffsetMinVal;    // (Always on) This is not exposed publicly, so we don't clear it and it doesn't have a corresponding flag (could we? for consistency?)
 
-    ImGuiNextWindowData()       { memset(this, 0, sizeof(*this)); }
+    ImGuiNextWindowData()       { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     inline void ClearFlags()    { Flags = ImGuiNextWindowDataFlags_None; }
 };
 
@@ -1174,7 +1176,7 @@ struct ImGuiNextItemData
     bool                        OpenVal;            // Set by SetNextItemOpen()
     ImGuiCond                   OpenCond : 8;
 
-    ImGuiNextItemData()         { memset(this, 0, sizeof(*this)); SelectionUserData = -1; }
+    ImGuiNextItemData()         { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); SelectionUserData = -1; }
     inline void ClearFlags()    { Flags = ImGuiNextItemDataFlags_None; ItemFlags = ImGuiItemFlags_None; } // Also cleared manually by ItemAdd()!
 };
 
@@ -1190,7 +1192,7 @@ struct ImGuiLastItemData
     ImRect                  DisplayRect;        // Display rectangle (ONLY VALID IF ImGuiItemStatusFlags_HasDisplayRect is set)
     ImRect                  ClipRect;           // Clip rectangle at the time of submitting item (ONLY VALID IF ImGuiItemStatusFlags_HasClipRect is set)
 
-    ImGuiLastItemData()     { memset(this, 0, sizeof(*this)); }
+    ImGuiLastItemData()     { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 // Store data emitted by TreeNode() for usage by TreePop() to implement ImGuiTreeNodeFlags_NavLeftJumpsBackHere.
@@ -1215,7 +1217,7 @@ struct IMGUI_API ImGuiStackSizes
     short   SizeOfBeginPopupStack;
     short   SizeOfDisabledStack;
 
-    ImGuiStackSizes() { memset(this, 0, sizeof(*this)); }
+    ImGuiStackSizes() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     void SetToContextState(ImGuiContext* ctx);
     void CompareWithContextState(ImGuiContext* ctx);
 };
@@ -1301,7 +1303,7 @@ struct ImGuiPopupData
     ImVec2              OpenPopupPos;   // Set on OpenPopup(), preferred popup position (typically == OpenMousePos when using mouse)
     ImVec2              OpenMousePos;   // Set on OpenPopup(), copy of mouse position at the time of opening popup
 
-    ImGuiPopupData()    { memset(this, 0, sizeof(*this)); ParentNavLayer = OpenFrameCount = -1; }
+    ImGuiPopupData()    { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); ParentNavLayer = OpenFrameCount = -1; }
 };
 
 //-----------------------------------------------------------------------------
@@ -1379,7 +1381,7 @@ struct ImGuiInputEvent
     };
     bool                            AddedByTestEngine;
 
-    ImGuiInputEvent() { memset(this, 0, sizeof(*this)); }
+    ImGuiInputEvent() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 // Input function taking an 'ImGuiID owner_id' argument defaults to (ImGuiKeyOwner_Any == 0) aka don't test ownership, which matches legacy behavior.
@@ -1519,7 +1521,7 @@ struct ImGuiListClipperData
     int                             ItemsFrozen;
     ImVector<ImGuiListClipperRange> Ranges;
 
-    ImGuiListClipperData()          { memset(this, 0, sizeof(*this)); }
+    ImGuiListClipperData()          { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     void                            Reset(ImGuiListClipper* clipper) { ListClipper = clipper; StepNo = ItemsFrozen = 0; Ranges.resize(0); }
 };
 
@@ -1644,7 +1646,7 @@ struct IMGUI_API ImGuiTypingSelectState
     float           LastRequestTime = 0.0f;
     bool            SingleCharModeLock = false; // After a certain single char repeat count we lock into SingleCharMode. Two benefits: 1) buffer never fill, 2) we can provide an immediate SingleChar mode without timer elapsing.
 
-    ImGuiTypingSelectState() { memset(this, 0, sizeof(*this)); }
+    ImGuiTypingSelectState() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     void            Clear()  { SearchBuffer[0] = 0; SingleCharModeLock = false; } // We preserve remaining data for easier debugging
 };
 
@@ -1680,7 +1682,7 @@ struct ImGuiOldColumnData
     ImGuiOldColumnFlags Flags;                  // Not exposed
     ImRect              ClipRect;
 
-    ImGuiOldColumnData() { memset(this, 0, sizeof(*this)); }
+    ImGuiOldColumnData() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 struct ImGuiOldColumns
@@ -1701,7 +1703,7 @@ struct ImGuiOldColumns
     ImVector<ImGuiOldColumnData> Columns;
     ImDrawListSplitter  Splitter;
 
-    ImGuiOldColumns()   { memset(this, 0, sizeof(*this)); }
+    ImGuiOldColumns()   { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 //-----------------------------------------------------------------------------
@@ -1771,7 +1773,7 @@ struct ImGuiWindowSettings
     bool        WantApply;      // Set when loaded from .ini data (to enable merging/loading .ini data into an already running context)
     bool        WantDelete;     // Set to invalidate/delete the settings entry
 
-    ImGuiWindowSettings()       { memset(this, 0, sizeof(*this)); }
+    ImGuiWindowSettings()       { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     char* GetName()             { return (char*)(this + 1); }
 };
 
@@ -1787,7 +1789,7 @@ struct ImGuiSettingsHandler
     void        (*WriteAllFn)(ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* out_buf);      // Write: Output every entries into 'out_buf'
     void*       UserData;
 
-    ImGuiSettingsHandler() { memset(this, 0, sizeof(*this)); }
+    ImGuiSettingsHandler() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 //-----------------------------------------------------------------------------
@@ -1851,7 +1853,7 @@ struct ImGuiDebugAllocInfo
     ImS16       LastEntriesIdx;             // Current index in buffer
     ImGuiDebugAllocEntry LastEntriesBuf[6]; // Track last 6 frames that had allocations
 
-    ImGuiDebugAllocInfo() { memset(this, 0, sizeof(*this)); }
+    ImGuiDebugAllocInfo() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 struct ImGuiMetricsConfig
@@ -1879,7 +1881,7 @@ struct ImGuiStackLevelInfo
     ImGuiDataType           DataType : 8;
     char                    Desc[57];                   // Arbitrarily sized buffer to hold a result (FIXME: could replace Results[] with a chunk stream?) FIXME: Now that we added CTRL+C this should be fixed.
 
-    ImGuiStackLevelInfo()   { memset(this, 0, sizeof(*this)); }
+    ImGuiStackLevelInfo()   { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 // State for ID Stack tool queries
@@ -1892,7 +1894,7 @@ struct ImGuiIDStackTool
     bool                    CopyToClipboardOnCtrlC;
     float                   CopyToClipboardLastTime;
 
-    ImGuiIDStackTool()      { memset(this, 0, sizeof(*this)); CopyToClipboardLastTime = -FLT_MAX; }
+    ImGuiIDStackTool()      { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); CopyToClipboardLastTime = -FLT_MAX; }
 };
 
 //-----------------------------------------------------------------------------
@@ -1910,7 +1912,7 @@ struct ImGuiContextHook
     ImGuiContextHookCallback    Callback;
     void*                       UserData;
 
-    ImGuiContextHook()          { memset(this, 0, sizeof(*this)); }
+    ImGuiContextHook()          { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 //-----------------------------------------------------------------------------
@@ -2359,7 +2361,7 @@ struct ImGuiContext
         DragDropAcceptIdPrev = DragDropAcceptIdCurr = 0;
         DragDropAcceptFrameCount = -1;
         DragDropHoldJustPressedId = 0;
-        memset(DragDropPayloadBufLocal, 0, sizeof(DragDropPayloadBufLocal));
+        IMGUI_STD_FUNC_NAMESPACE::memset(DragDropPayloadBufLocal, 0, sizeof(DragDropPayloadBufLocal));
 
         ClipperTempDataStacked = 0;
 
@@ -2399,7 +2401,7 @@ struct ImGuiContext
         SettingsDirtyTimer = 0.0f;
         HookIdNext = 0;
 
-        memset(LocalizationTable, 0, sizeof(LocalizationTable));
+        IMGUI_STD_FUNC_NAMESPACE::memset(LocalizationTable, 0, sizeof(LocalizationTable));
 
         LogEnabled = false;
         LogType = ImGuiLogType_None;
@@ -2429,11 +2431,11 @@ struct ImGuiContext
         DebugBreakKeyChord = ImGuiKey_Pause;
         DebugBreakInShortcutRouting = ImGuiKey_None;
 
-        memset(FramerateSecPerFrame, 0, sizeof(FramerateSecPerFrame));
+        IMGUI_STD_FUNC_NAMESPACE::memset(FramerateSecPerFrame, 0, sizeof(FramerateSecPerFrame));
         FramerateSecPerFrameIdx = FramerateSecPerFrameCount = 0;
         FramerateSecPerFrameAccum = 0.0f;
         WantCaptureMouseNextFrame = WantCaptureKeyboardNextFrame = WantTextInputNextFrame = -1;
-        memset(TempKeychordName, 0, sizeof(TempKeychordName));
+        IMGUI_STD_FUNC_NAMESPACE::memset(TempKeychordName, 0, sizeof(TempKeychordName));
     }
 };
 
@@ -2653,7 +2655,7 @@ struct ImGuiTabItem
     ImS16               IndexDuringLayout;      // Index only used during TabBarLayout(). Tabs gets reordered so 'Tabs[n].IndexDuringLayout == n' but may mismatch during additions.
     bool                WantClose;              // Marked as closed by SetTabItemClosed()
 
-    ImGuiTabItem()      { memset(this, 0, sizeof(*this)); LastFrameVisible = LastFrameSelected = -1; RequestedWidth = -1.0f; NameOffset = -1; BeginOrder = IndexDuringLayout = -1; }
+    ImGuiTabItem()      { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); LastFrameVisible = LastFrameSelected = -1; RequestedWidth = -1.0f; NameOffset = -1; BeginOrder = IndexDuringLayout = -1; }
 };
 
 // Storage for a tab bar (sizeof() 152 bytes)
@@ -2757,7 +2759,7 @@ struct ImGuiTableColumn
 
     ImGuiTableColumn()
     {
-        memset(this, 0, sizeof(*this));
+        IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this));
         StretchWeight = WidthRequest = -1.0f;
         NameOffset = -1;
         DisplayOrder = IndexWithinEnabledSet = -1;
@@ -2907,7 +2909,7 @@ struct IMGUI_API ImGuiTable
     bool                        MemoryCompacted;
     bool                        HostSkipItems;              // Backup of InnerWindow->SkipItem at the end of BeginTable(), because we will overwrite InnerWindow->SkipItem on a per-column basis
 
-    ImGuiTable()                { memset(this, 0, sizeof(*this)); LastFrameActive = -1; }
+    ImGuiTable()                { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); LastFrameActive = -1; }
     ~ImGuiTable()               { IM_FREE(RawData); }
 };
 
@@ -2933,7 +2935,7 @@ struct IMGUI_API ImGuiTableTempData
     float                       HostBackupItemWidth;        // Backup of OuterWindow->DC.ItemWidth at the end of BeginTable()
     int                         HostBackupItemWidthStackSize;//Backup of OuterWindow->DC.ItemWidthStack.Size at the end of BeginTable()
 
-    ImGuiTableTempData()        { memset(this, 0, sizeof(*this)); LastTimeActive = -1.0f; }
+    ImGuiTableTempData()        { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); LastTimeActive = -1.0f; }
 };
 
 // sizeof() ~ 12
@@ -2970,7 +2972,7 @@ struct ImGuiTableSettings
     ImGuiTableColumnIdx         ColumnsCountMax;        // Maximum number of columns this settings instance can store, we can recycle a settings instance with lower number of columns but not higher
     bool                        WantApply;              // Set when loaded from .ini data (to enable merging/loading .ini data into an already running context)
 
-    ImGuiTableSettings()        { memset(this, 0, sizeof(*this)); }
+    ImGuiTableSettings()        { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
     ImGuiTableColumnSettings*   GetColumnSettings()     { return (ImGuiTableColumnSettings*)(this + 1); }
 };
 

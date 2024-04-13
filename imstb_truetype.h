@@ -484,13 +484,13 @@ int main(int arg, char **argv)
 
    #ifndef STBTT_strlen
    #include <string.h>
-   #define STBTT_strlen(x)    strlen(x)
+   #define STBTT_strlen(x)    IMGUI_STD_FUNC_NAMESPACE::strlen(x)
    #endif
 
    #ifndef STBTT_memcpy
    #include <string.h>
-   #define STBTT_memcpy       memcpy
-   #define STBTT_memset       memset
+   #define STBTT_memcpy       IMGUI_STD_FUNC_NAMESPACE::memcpy
+   #define STBTT_memset       IMGUI_STD_FUNC_NAMESPACE::memset
    #endif
 #endif
 

@@ -180,7 +180,7 @@ bool CreateDeviceD3D(HWND hWnd)
 {
     // Setup swap chain
     DXGI_SWAP_CHAIN_DESC sd;
-    ZeroMemory(&sd, sizeof(sd));
+    IMGUI_STD_FUNC_NAMESPACE::memset(&sd, 0, sizeof(sd));
     sd.BufferCount = 2;
     sd.BufferDesc.Width = 0;
     sd.BufferDesc.Height = 0;

@@ -159,7 +159,7 @@ void ImGui::TextEx(const char* text, const char* text_end, ImGuiTextFlags flags)
     // Calculate length
     const char* text_begin = text;
     if (text_end == NULL)
-        text_end = text + strlen(text); // FIXME-OPT
+        text_end = text + IMGUI_STD_FUNC_NAMESPACE::strlen(text); // FIXME-OPT
 
     const ImVec2 text_pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
     const float wrap_pos_x = window->DC.TextWrapPos;
@@ -1895,7 +1895,7 @@ static const char* Items_SingleStringGetter(void* data, int idx)
     {
         if (idx == items_count)
             break;
-        p += strlen(p) + 1;
+        p += IMGUI_STD_FUNC_NAMESPACE::strlen(p) + 1;
         items_count++;
     }
     return *p ? p : NULL;
@@ -2116,7 +2116,7 @@ bool ImGui::DataTypeApplyFromText(const char* buf, ImGuiDataType data_type, void
     // Copy the value in an opaque buffer so we can compare at the end of the function if it changed at all.
     const ImGuiDataTypeInfo* type_info = DataTypeGetInfo(data_type);
     ImGuiDataTypeTempStorage data_backup;
-    memcpy(&data_backup, p_data, type_info->Size);
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(&data_backup, p_data, type_info->Size);
 
     // Sanitize format
     // - For float/double we have to ignore format with precision (e.g. "%.2f") because sscanf doesn't take them in, so force them into %f and %lf
@@ -3437,7 +3437,7 @@ bool ImGui::TempInputScalar(const ImRect& bb, ImGuiID id, const char* label, ImG
         // Backup old value
         size_t data_type_size = type_info->Size;
         ImGuiDataTypeTempStorage data_backup;
-        memcpy(&data_backup, p_data, data_type_size);
+        IMGUI_STD_FUNC_NAMESPACE::memcpy(&data_backup, p_data, data_type_size);
 
         // Apply new value (or operations) then clamp
         DataTypeApplyFromText(data_buf, data_type, p_data, format);
@@ -3796,8 +3796,8 @@ static bool STB_TEXTEDIT_INSERTCHARS(ImGuiInputTextState* obj, int pos, const Im
 
     ImWchar* text = obj->TextW.Data;
     if (pos != text_len)
-        memmove(text + pos + new_text_len, text + pos, (size_t)(text_len - pos) * sizeof(ImWchar));
-    memcpy(text + pos, new_text, (size_t)new_text_len * sizeof(ImWchar));
+        IMGUI_STD_FUNC_NAMESPACE::memmove(text + pos + new_text_len, text + pos, (size_t)(text_len - pos) * sizeof(ImWchar));
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(text + pos, new_text, (size_t)new_text_len * sizeof(ImWchar));
 
     obj->Edited = true;
     obj->CurLenW += new_text_len;
@@ -3827,7 +3827,11 @@ static bool STB_TEXTEDIT_INSERTCHARS(ImGuiInputTextState* obj, int pos, const Im
 #define STB_TEXTEDIT_K_SHIFT        0x400000
 
 #define IMSTB_TEXTEDIT_IMPLEMENTATION
+#ifdef IMGUI_NO_STD
+#define IMSTB_TEXTEDIT_memmove IMGUI_STD_FUNC_NAMESPACE::memmove
+#else 
 #define IMSTB_TEXTEDIT_memmove memmove
+#endif // IMGUI_NO_STD
 #include "imstb_textedit.h"
 
 // stb_textedit internally allows for a single undo record to do addition and deletion, but somehow, calling
@@ -3859,7 +3863,7 @@ void ImGuiInputTextState::OnKeyPressed(int key)
 
 ImGuiInputTextCallbackData::ImGuiInputTextCallbackData()
 {
-    memset(this, 0, sizeof(*this));
+    IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this));
 }
 
 // Public API to manipulate UTF-8 text
@@ -3890,7 +3894,7 @@ void ImGuiInputTextCallbackData::InsertChars(int pos, const char* new_text, cons
         return;
 
     const bool is_resizable = (Flags & ImGuiInputTextFlags_CallbackResize) != 0;
-    const int new_text_len = new_text_end ? (int)(new_text_end - new_text) : (int)strlen(new_text);
+    const int new_text_len = new_text_end ? (int)(new_text_end - new_text) : (int) IMGUI_STD_FUNC_NAMESPACE::strlen(new_text);
     if (new_text_len + BufTextLen >= BufSize)
     {
         if (!is_resizable)
@@ -3908,8 +3912,8 @@ void ImGuiInputTextCallbackData::InsertChars(int pos, const char* new_text, cons
     }
 
     if (BufTextLen != pos)
-        memmove(Buf + pos + new_text_len, Buf + pos, (size_t)(BufTextLen - pos));
-    memcpy(Buf + pos, new_text, (size_t)new_text_len * sizeof(char));
+        IMGUI_STD_FUNC_NAMESPACE::memmove(Buf + pos + new_text_len, Buf + pos, (size_t)(BufTextLen - pos));
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(Buf + pos, new_text, (size_t)new_text_len * sizeof(char));
     Buf[BufTextLen + new_text_len] = '\0';
 
     if (CursorPos >= pos)
@@ -4074,7 +4078,7 @@ void ImGui::InputTextDeactivateHook(ImGuiID id)
     {
         IM_ASSERT(state->TextA.Data != 0);
         g.InputTextDeactivatedState.TextA.resize(state->CurLenA + 1);
-        memcpy(g.InputTextDeactivatedState.TextA.Data, state->TextA.Data, state->CurLenA + 1);
+        IMGUI_STD_FUNC_NAMESPACE::memcpy(g.InputTextDeactivatedState.TextA.Data, state->TextA.Data, state->CurLenA + 1);
     }
 }
 
@@ -4206,18 +4210,18 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
         InputTextDeactivateHook(state->ID);
 
         // From the moment we focused we are normally ignoring the content of 'buf' (unless we are in read-only mode)
-        const int buf_len = (int)strlen(buf);
+        const int buf_len = (int) IMGUI_STD_FUNC_NAMESPACE::strlen(buf);
         if (!init_reload_from_user_buf)
         {
             // Take a copy of the initial buffer value.
             state->InitialTextA.resize(buf_len + 1);    // UTF-8. we use +1 to make sure that .Data is always pointing to at least an empty string.
-            memcpy(state->InitialTextA.Data, buf, buf_len + 1);
+            IMGUI_STD_FUNC_NAMESPACE::memcpy(state->InitialTextA.Data, buf, buf_len + 1);
         }
 
         // Preserve cursor position and undo/redo stack if we come back to same widget
         // FIXME: Since we reworked this on 2022/06, may want to differentiate recycle_cursor vs recycle_undostate?
         bool recycle_state = (state->ID == id && !init_changed_specs && !init_reload_from_user_buf);
-        if (recycle_state && (state->CurLenA != buf_len || (state->TextAIsValid && strncmp(state->TextA.Data, buf, buf_len) != 0)))
+        if (recycle_state && (state->CurLenA != buf_len || (state->TextAIsValid && IMGUI_STD_FUNC_NAMESPACE::strncmp(state->TextA.Data, buf, buf_len) != 0)))
             recycle_state = false;
 
         // Start edition
@@ -4587,7 +4591,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
             if (const char* clipboard = GetClipboardText())
             {
                 // Filter pasted buffer
-                const int clipboard_len = (int)strlen(clipboard);
+                const int clipboard_len = (int) IMGUI_STD_FUNC_NAMESPACE::strlen(clipboard);
                 ImWchar* clipboard_filtered = (ImWchar*)IM_ALLOC((clipboard_len + 1) * sizeof(ImWchar));
                 int clipboard_filtered_len = 0;
                 for (const char* s = clipboard; *s != 0; )
@@ -4827,7 +4831,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
     if (is_displaying_hint)
     {
         buf_display = hint;
-        buf_display_end = hint + strlen(hint);
+        buf_display_end = hint + IMGUI_STD_FUNC_NAMESPACE::strlen(hint);
     }
 
     // Render text. We currently only render selection when the widget is active or while scrolling.
@@ -5004,7 +5008,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
         else if (!is_displaying_hint && g.ActiveId == id)
             buf_display_end = buf_display + state->CurLenA;
         else if (!is_displaying_hint)
-            buf_display_end = buf_display + strlen(buf_display);
+            buf_display_end = buf_display + IMGUI_STD_FUNC_NAMESPACE::strlen(buf_display);
 
         if (is_multiline || (buf_display_end - buf_display) < buf_display_max_length)
         {
@@ -5075,7 +5079,8 @@ void ImGui::DebugNodeInputTextState(ImGuiInputTextState* state)
             const char undo_rec_type = (n < undo_state->undo_point) ? 'u' : (n >= undo_state->redo_point) ? 'r' : ' ';
             if (undo_rec_type == ' ')
                 BeginDisabled();
-            char buf[64] = "";
+            char buf[64];
+            IMGUI_STD_FUNC_NAMESPACE::memset( &buf[ 0 ], 0, 64 );
             if (undo_rec_type != ' ' && undo_rec->char_storage != -1)
                 ImTextStrToUtf8(buf, IM_ARRAYSIZE(buf), undo_state->undo_char + undo_rec->char_storage, undo_state->undo_char + undo_rec->char_storage + undo_rec->insert_length);
             Text("%c [%02d] where %03d, insert %03d, delete %03d, char_storage %03d \"%s\"",
@@ -5365,12 +5370,12 @@ bool ImGui::ColorEdit4(const char* label, float col[4], ImGuiColorEditFlags flag
         bool accepted_drag_drop = false;
         if (const ImGuiPayload* payload = AcceptDragDropPayload(IMGUI_PAYLOAD_TYPE_COLOR_3F))
         {
-            memcpy((float*)col, payload->Data, sizeof(float) * 3); // Preserve alpha if any //-V512 //-V1086
+            IMGUI_STD_FUNC_NAMESPACE::memcpy((float*)col, payload->Data, sizeof(float) * 3); // Preserve alpha if any //-V512 //-V1086
             value_changed = accepted_drag_drop = true;
         }
         if (const ImGuiPayload* payload = AcceptDragDropPayload(IMGUI_PAYLOAD_TYPE_COLOR_4F))
         {
-            memcpy((float*)col, payload->Data, sizeof(float) * components);
+            IMGUI_STD_FUNC_NAMESPACE::memcpy((float*)col, payload->Data, sizeof(float) * components);
             value_changed = accepted_drag_drop = true;
         }
 
@@ -5463,7 +5468,7 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
     float bars_triangles_half_sz = IM_TRUNC(bars_width * 0.20f);
 
     float backup_initial_col[4];
-    memcpy(backup_initial_col, col, components * sizeof(float));
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(backup_initial_col, col, components * sizeof(float));
 
     float wheel_thickness = sv_picker_size * 0.08f;
     float wheel_r_outer = sv_picker_size * 0.50f;
@@ -5596,7 +5601,7 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
             ImVec4 ref_col_v4(ref_col[0], ref_col[1], ref_col[2], (flags & ImGuiColorEditFlags_NoAlpha) ? 1.0f : ref_col[3]);
             if (ColorButton("##original", ref_col_v4, (flags & sub_flags_to_forward), ImVec2(square_sz * 3, square_sz * 2)))
             {
-                memcpy(col, ref_col, components * sizeof(float));
+                IMGUI_STD_FUNC_NAMESPACE::memcpy(col, ref_col, components * sizeof(float));
                 value_changed = true;
             }
         }
@@ -5770,7 +5775,7 @@ bool ImGui::ColorPicker4(const char* label, float col[4], ImGuiColorEditFlags fl
 
     EndGroup();
 
-    if (value_changed && memcmp(backup_initial_col, col, components * sizeof(float)) == 0)
+    if (value_changed && IMGUI_STD_FUNC_NAMESPACE::memcmp(backup_initial_col, col, components * sizeof(float)) == 0)
         value_changed = false;
     if (value_changed && g.LastItemData.ID != 0) // In case of ID collision, the second EndGroup() won't catch g.ActiveId
         MarkItemEdited(g.LastItemData.ID);
@@ -5999,7 +6004,7 @@ void ImGui::ColorPickerOptionsPopup(const float* ref_col, ImGuiColorEditFlags fl
                 g.ColorEditOptions = (g.ColorEditOptions & ~ImGuiColorEditFlags_PickerMask_) | (picker_flags & ImGuiColorEditFlags_PickerMask_);
             SetCursorScreenPos(backup_pos);
             ImVec4 previewing_ref_col;
-            memcpy(&previewing_ref_col, ref_col, sizeof(float) * ((picker_flags & ImGuiColorEditFlags_NoAlpha) ? 3 : 4));
+            IMGUI_STD_FUNC_NAMESPACE::memcpy(&previewing_ref_col, ref_col, sizeof(float) * ((picker_flags & ImGuiColorEditFlags_NoAlpha) ? 3 : 4));
             ColorPicker4("##previewing_picker", &previewing_ref_col.x, picker_flags);
             PopID();
         }
@@ -6717,7 +6722,7 @@ ImGuiTypingSelectRequest* ImGui::GetTypingSelectRequest(ImGuiTypingSelectFlags f
 
     // Append to buffer
     const int buffer_max_len = IM_ARRAYSIZE(data->SearchBuffer) - 1;
-    int buffer_len = (int)strlen(data->SearchBuffer);
+    int buffer_len = (int) IMGUI_STD_FUNC_NAMESPACE::strlen(data->SearchBuffer);
     bool select_request = false;
     for (ImWchar w : g.IO.InputQueueCharacters)
     {
@@ -6726,7 +6731,7 @@ ImGuiTypingSelectRequest* ImGui::GetTypingSelectRequest(ImGuiTypingSelectFlags f
             continue;
         char w_buf[5];
         ImTextCharToUtf8(w_buf, (unsigned int)w);
-        if (data->SingleCharModeLock && w_len == out_request->SingleCharSize && memcmp(w_buf, data->SearchBuffer, w_len) == 0)
+        if (data->SingleCharModeLock && w_len == out_request->SingleCharSize && IMGUI_STD_FUNC_NAMESPACE::memcmp(w_buf, data->SearchBuffer, w_len) == 0)
         {
             select_request = true; // Same character: don't need to append to buffer.
             continue;
@@ -6736,7 +6741,7 @@ ImGuiTypingSelectRequest* ImGui::GetTypingSelectRequest(ImGuiTypingSelectFlags f
             data->Clear(); // Different character: clear
             buffer_len = 0;
         }
-        memcpy(data->SearchBuffer + buffer_len, w_buf, w_len + 1); // Append
+        IMGUI_STD_FUNC_NAMESPACE::memcpy(data->SearchBuffer + buffer_len, w_buf, w_len + 1); // Append
         buffer_len += w_len;
         select_request = true;
     }
@@ -7220,10 +7225,10 @@ void ImGui::Value(const char* prefix, float v, const char* float_format)
 void ImGuiMenuColumns::Update(float spacing, bool window_reappearing)
 {
     if (window_reappearing)
-        memset(Widths, 0, sizeof(Widths));
+        IMGUI_STD_FUNC_NAMESPACE::memset(Widths, 0, sizeof(Widths));
     Spacing = (ImU16)spacing;
     CalcNextTotalWidth(true);
-    memset(Widths, 0, sizeof(Widths));
+    IMGUI_STD_FUNC_NAMESPACE::memset(Widths, 0, sizeof(Widths));
     TotalWidth = NextTotalWidth;
     NextTotalWidth = 0;
 }
@@ -7792,7 +7797,7 @@ struct ImGuiTabBarSection
     float               Width;                  // Sum of width of tabs in this section (after shrinking down)
     float               Spacing;                // Horizontal spacing at the end of the section.
 
-    ImGuiTabBarSection() { memset(this, 0, sizeof(*this)); }
+    ImGuiTabBarSection() { IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this)); }
 };
 
 namespace ImGui
@@ -7808,7 +7813,7 @@ namespace ImGui
 
 ImGuiTabBar::ImGuiTabBar()
 {
-    memset(this, 0, sizeof(*this));
+    IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this));
     CurrFrameVisible = PrevFrameVisible = -1;
     LastTabItemIdx = -1;
 }
@@ -8671,7 +8676,7 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
     else
     {
         tab->NameOffset = (ImS32)tab_bar->TabsNames.size();
-        tab_bar->TabsNames.append(label, label + strlen(label) + 1);
+        tab_bar->TabsNames.append(label, label + IMGUI_STD_FUNC_NAMESPACE::strlen(label) + 1);
     }
 
     // Update selected tab

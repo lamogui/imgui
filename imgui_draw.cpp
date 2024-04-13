@@ -38,7 +38,9 @@ Index of this file:
 #include "misc/freetype/imgui_freetype.h"
 #endif
 
+#ifndef IMGUI_NO_STD
 #include <stdio.h>      // vsnprintf, sscanf, printf
+#endif // IMGUI_NO_STD
 
 // Visual Studio warnings
 #ifdef _MSC_VER
@@ -136,6 +138,8 @@ namespace IMGUI_STB_NAMESPACE
 #define STBTT_sqrt(x)       ImSqrt(x)
 #define STBTT_pow(x,y)      ImPow(x,y)
 #define STBTT_fabs(x)       ImFabs(x)
+#define STBTT_cos( x )      ImCos( x )
+#define STBTT_acos( x )     ImAcos( x )
 #define STBTT_ifloor(x)     ((int)ImFloor(x))
 #define STBTT_iceil(x)      ((int)ImCeil(x))
 #define STBTT_STATIC
@@ -359,7 +363,7 @@ void ImGui::StyleColorsLight(ImGuiStyle* dst)
 
 ImDrawListSharedData::ImDrawListSharedData()
 {
-    memset(this, 0, sizeof(*this));
+    IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this));
     for (int i = 0; i < IM_ARRAYSIZE(ArcFastVtx); i++)
     {
         const float a = ((float)i * 2 * IM_PI) / (float)IM_ARRAYSIZE(ArcFastVtx);
@@ -397,7 +401,7 @@ void ImDrawList::_ResetForNewFrame()
     IdxBuffer.resize(0);
     VtxBuffer.resize(0);
     Flags = _Data->InitialFlags;
-    memset(&_CmdHeader, 0, sizeof(_CmdHeader));
+    IMGUI_STD_FUNC_NAMESPACE::memset(&_CmdHeader, 0, sizeof(_CmdHeader));
     _VtxCurrentIdx = 0;
     _VtxWritePtr = NULL;
     _IdxWritePtr = NULL;
@@ -477,8 +481,8 @@ void ImDrawList::AddCallback(ImDrawCallback callback, void* callback_data)
 
 // Compare ClipRect, TextureId and VtxOffset with a single memcmp()
 #define ImDrawCmd_HeaderSize                            (offsetof(ImDrawCmd, VtxOffset) + sizeof(unsigned int))
-#define ImDrawCmd_HeaderCompare(CMD_LHS, CMD_RHS)       (memcmp(CMD_LHS, CMD_RHS, ImDrawCmd_HeaderSize))    // Compare ClipRect, TextureId, VtxOffset
-#define ImDrawCmd_HeaderCopy(CMD_DST, CMD_SRC)          (memcpy(CMD_DST, CMD_SRC, ImDrawCmd_HeaderSize))    // Copy ClipRect, TextureId, VtxOffset
+#define ImDrawCmd_HeaderCompare(CMD_LHS, CMD_RHS)       (IMGUI_STD_FUNC_NAMESPACE::memcmp(CMD_LHS, CMD_RHS, ImDrawCmd_HeaderSize))    // Compare ClipRect, TextureId, VtxOffset
+#define ImDrawCmd_HeaderCopy(CMD_DST, CMD_SRC)          (IMGUI_STD_FUNC_NAMESPACE::memcpy(CMD_DST, CMD_SRC, ImDrawCmd_HeaderSize))    // Copy ClipRect, TextureId, VtxOffset
 #define ImDrawCmd_AreSequentialIdxOffset(CMD_0, CMD_1)  (CMD_0->IdxOffset + CMD_0->ElemCount == CMD_1->IdxOffset)
 
 // Try to merge two last draw commands
@@ -501,7 +505,7 @@ void ImDrawList::_OnChangedClipRect()
     // If current command is used with different settings we need to add a new command
     IM_ASSERT_PARANOID(CmdBuffer.Size > 0);
     ImDrawCmd* curr_cmd = &CmdBuffer.Data[CmdBuffer.Size - 1];
-    if (curr_cmd->ElemCount != 0 && memcmp(&curr_cmd->ClipRect, &_CmdHeader.ClipRect, sizeof(ImVec4)) != 0)
+    if (curr_cmd->ElemCount != 0 && IMGUI_STD_FUNC_NAMESPACE::memcmp(&curr_cmd->ClipRect, &_CmdHeader.ClipRect, sizeof(ImVec4)) != 0)
     {
         AddDrawCmd();
         return;
@@ -1617,7 +1621,7 @@ void ImDrawList::AddText(const ImFont* font, float font_size, const ImVec2& pos,
     if (text_begin == text_end || text_begin[0] == 0)
         return;
     if (text_end == NULL)
-        text_end = text_begin + strlen(text_begin);
+        text_end = text_begin + IMGUI_STD_FUNC_NAMESPACE::strlen(text_begin);
 
     // Pull default font/size from the shared ImDrawListSharedData instance
     if (font == NULL)
@@ -2023,7 +2027,7 @@ void ImDrawListSplitter::ClearFreeMemory()
     for (int i = 0; i < _Channels.Size; i++)
     {
         if (i == _Current)
-            memset(&_Channels[i], 0, sizeof(_Channels[i]));  // Current channel is a copy of CmdBuffer/IdxBuffer, don't destruct again
+            IMGUI_STD_FUNC_NAMESPACE::memset(&_Channels[i], 0, sizeof(_Channels[i]));  // Current channel is a copy of CmdBuffer/IdxBuffer, don't destruct again
         _Channels[i]._CmdBuffer.clear();
         _Channels[i]._IdxBuffer.clear();
     }
@@ -2047,7 +2051,7 @@ void ImDrawListSplitter::Split(ImDrawList* draw_list, int channels_count)
     // Channels[] (24/32 bytes each) hold storage that we'll swap with draw_list->_CmdBuffer/_IdxBuffer
     // The content of Channels[0] at this point doesn't matter. We clear it to make state tidy in a debugger but we don't strictly need to.
     // When we switch to the next channel, we'll copy draw_list->_CmdBuffer/_IdxBuffer into Channels[0] and then Channels[1] into draw_list->CmdBuffer/_IdxBuffer
-    memset(&_Channels[0], 0, sizeof(ImDrawChannel));
+    IMGUI_STD_FUNC_NAMESPACE::memset(&_Channels[0], 0, sizeof(ImDrawChannel));
     for (int i = 1; i < channels_count; i++)
     {
         if (i >= old_channels_count)
@@ -2114,8 +2118,8 @@ void ImDrawListSplitter::Merge(ImDrawList* draw_list)
     for (int i = 1; i < _Count; i++)
     {
         ImDrawChannel& ch = _Channels[i];
-        if (int sz = ch._CmdBuffer.Size) { memcpy(cmd_write, ch._CmdBuffer.Data, sz * sizeof(ImDrawCmd)); cmd_write += sz; }
-        if (int sz = ch._IdxBuffer.Size) { memcpy(idx_write, ch._IdxBuffer.Data, sz * sizeof(ImDrawIdx)); idx_write += sz; }
+        if (int sz = ch._CmdBuffer.Size) { IMGUI_STD_FUNC_NAMESPACE::memcpy(cmd_write, ch._CmdBuffer.Data, sz * sizeof(ImDrawCmd)); cmd_write += sz; }
+        if (int sz = ch._IdxBuffer.Size) { IMGUI_STD_FUNC_NAMESPACE::memcpy(idx_write, ch._IdxBuffer.Data, sz * sizeof(ImDrawIdx)); idx_write += sz; }
     }
     draw_list->_IdxWritePtr = idx_write;
 
@@ -2140,11 +2144,11 @@ void ImDrawListSplitter::SetCurrentChannel(ImDrawList* draw_list, int idx)
         return;
 
     // Overwrite ImVector (12/16 bytes), four times. This is merely a silly optimization instead of doing .swap()
-    memcpy(&_Channels.Data[_Current]._CmdBuffer, &draw_list->CmdBuffer, sizeof(draw_list->CmdBuffer));
-    memcpy(&_Channels.Data[_Current]._IdxBuffer, &draw_list->IdxBuffer, sizeof(draw_list->IdxBuffer));
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(&_Channels.Data[_Current]._CmdBuffer, &draw_list->CmdBuffer, sizeof(draw_list->CmdBuffer));
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(&_Channels.Data[_Current]._IdxBuffer, &draw_list->IdxBuffer, sizeof(draw_list->IdxBuffer));
     _Current = idx;
-    memcpy(&draw_list->CmdBuffer, &_Channels.Data[idx]._CmdBuffer, sizeof(draw_list->CmdBuffer));
-    memcpy(&draw_list->IdxBuffer, &_Channels.Data[idx]._IdxBuffer, sizeof(draw_list->IdxBuffer));
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(&draw_list->CmdBuffer, &_Channels.Data[idx]._CmdBuffer, sizeof(draw_list->CmdBuffer));
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(&draw_list->IdxBuffer, &_Channels.Data[idx]._IdxBuffer, sizeof(draw_list->IdxBuffer));
     draw_list->_IdxWritePtr = draw_list->IdxBuffer.Data + draw_list->IdxBuffer.Size;
 
     // If current command is used with different settings we need to add a new command
@@ -2314,7 +2318,7 @@ void ImGui::ShadeVertsTransformPos(ImDrawList* draw_list, int vert_start_idx, in
 
 ImFontConfig::ImFontConfig()
 {
-    memset(this, 0, sizeof(*this));
+    IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this));
     FontDataOwnedByAtlas = true;
     OversampleH = 2;
     OversampleV = 1;
@@ -2380,7 +2384,7 @@ static const ImVec2 FONT_ATLAS_DEFAULT_TEX_CURSOR_DATA[ImGuiMouseCursor_COUNT][3
 
 ImFontAtlas::ImFontAtlas()
 {
-    memset(this, 0, sizeof(*this));
+    IMGUI_STD_FUNC_NAMESPACE::memset(this, 0, sizeof(*this));
     TexGlyphPadding = 1;
     PackIdMouseCursors = PackIdLines = -1;
 }
@@ -2497,7 +2501,7 @@ ImFont* ImFontAtlas::AddFont(const ImFontConfig* font_cfg)
     {
         new_font_cfg.FontData = IM_ALLOC(new_font_cfg.FontDataSize);
         new_font_cfg.FontDataOwnedByAtlas = true;
-        memcpy(new_font_cfg.FontData, font_cfg->FontData, (size_t)new_font_cfg.FontDataSize);
+        IMGUI_STD_FUNC_NAMESPACE::memcpy(new_font_cfg.FontData, font_cfg->FontData, (size_t)new_font_cfg.FontDataSize);
     }
 
     if (new_font_cfg.DstFont->EllipsisChar == (ImWchar)-1)
@@ -2564,7 +2568,7 @@ ImFont* ImFontAtlas::AddFontFromFileTTF(const char* filename, float size_pixels,
     {
         // Store a short copy of filename into into the font name for convenience
         const char* p;
-        for (p = filename + strlen(filename); p > filename && p[-1] != '/' && p[-1] != '\\'; p--) {}
+        for (p = filename + IMGUI_STD_FUNC_NAMESPACE::strlen(filename); p > filename && p[-1] != '/' && p[-1] != '\\'; p--) {}
         ImFormatString(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "%s, %.0fpx", p, size_pixels);
     }
     return AddFontFromMemoryTTF(data, (int)data_size, size_pixels, &font_cfg, glyph_ranges);
@@ -2599,7 +2603,7 @@ ImFont* ImFontAtlas::AddFontFromMemoryCompressedTTF(const void* compressed_ttf_d
 
 ImFont* ImFontAtlas::AddFontFromMemoryCompressedBase85TTF(const char* compressed_ttf_data_base85, float size_pixels, const ImFontConfig* font_cfg, const ImWchar* glyph_ranges)
 {
-    int compressed_ttf_size = (((int)strlen(compressed_ttf_data_base85) + 4) / 5) * 4;
+    int compressed_ttf_size = (((int) IMGUI_STD_FUNC_NAMESPACE::strlen(compressed_ttf_data_base85) + 4) / 5) * 4;
     void* compressed_ttf = IM_ALLOC((size_t)compressed_ttf_size);
     Decode85((const unsigned char*)compressed_ttf_data_base85, (unsigned char*)compressed_ttf);
     ImFont* font = AddFontFromMemoryCompressedTTF(compressed_ttf, compressed_ttf_size, size_pixels, font_cfg, glyph_ranges);
@@ -2769,8 +2773,8 @@ static bool ImFontAtlasBuildWithStbTruetype(ImFontAtlas* atlas)
     ImVector<ImFontBuildDstData> dst_tmp_array;
     src_tmp_array.resize(atlas->ConfigData.Size);
     dst_tmp_array.resize(atlas->Fonts.Size);
-    memset(src_tmp_array.Data, 0, (size_t)src_tmp_array.size_in_bytes());
-    memset(dst_tmp_array.Data, 0, (size_t)dst_tmp_array.size_in_bytes());
+    IMGUI_STD_FUNC_NAMESPACE::memset(src_tmp_array.Data, 0, (size_t)src_tmp_array.size_in_bytes());
+    IMGUI_STD_FUNC_NAMESPACE::memset(dst_tmp_array.Data, 0, (size_t)dst_tmp_array.size_in_bytes());
 
     // 1. Initialize font loading structure, check font data validity
     for (int src_i = 0; src_i < atlas->ConfigData.Size; src_i++)
@@ -2858,8 +2862,8 @@ static bool ImFontAtlasBuildWithStbTruetype(ImFontAtlas* atlas)
     ImVector<stbtt_packedchar> buf_packedchars;
     buf_rects.resize(total_glyphs_count);
     buf_packedchars.resize(total_glyphs_count);
-    memset(buf_rects.Data, 0, (size_t)buf_rects.size_in_bytes());
-    memset(buf_packedchars.Data, 0, (size_t)buf_packedchars.size_in_bytes());
+    IMGUI_STD_FUNC_NAMESPACE::memset(buf_rects.Data, 0, (size_t)buf_rects.size_in_bytes());
+    IMGUI_STD_FUNC_NAMESPACE::memset(buf_packedchars.Data, 0, (size_t)buf_packedchars.size_in_bytes());
 
     // 4. Gather glyphs sizes so we can pack them in our virtual canvas.
     int total_surface = 0;
@@ -2914,7 +2918,8 @@ static bool ImFontAtlasBuildWithStbTruetype(ImFontAtlas* atlas)
     // 5. Start packing
     // Pack our extra data rectangles first, so it will be on the upper-left corner of our texture (UV will have small values).
     const int TEX_HEIGHT_MAX = 1024 * 32;
-    stbtt_pack_context spc = {};
+    stbtt_pack_context spc;
+    IMGUI_STD_FUNC_NAMESPACE::memset( &spc, 0, sizeof( spc ) );
     stbtt_PackBegin(&spc, NULL, atlas->TexWidth, TEX_HEIGHT_MAX, 0, atlas->TexGlyphPadding, NULL);
     ImFontAtlasBuildPackCustomRects(atlas, spc.pack_info);
 
@@ -2938,7 +2943,7 @@ static bool ImFontAtlasBuildWithStbTruetype(ImFontAtlas* atlas)
     atlas->TexHeight = (atlas->Flags & ImFontAtlasFlags_NoPowerOfTwoHeight) ? (atlas->TexHeight + 1) : ImUpperPowerOfTwo(atlas->TexHeight);
     atlas->TexUvScale = ImVec2(1.0f / atlas->TexWidth, 1.0f / atlas->TexHeight);
     atlas->TexPixelsAlpha8 = (unsigned char*)IM_ALLOC(atlas->TexWidth * atlas->TexHeight);
-    memset(atlas->TexPixelsAlpha8, 0, atlas->TexWidth * atlas->TexHeight);
+    IMGUI_STD_FUNC_NAMESPACE::memset(atlas->TexPixelsAlpha8, 0, atlas->TexWidth * atlas->TexHeight);
     spc.pixels = atlas->TexPixelsAlpha8;
     spc.height = atlas->TexHeight;
 
@@ -3063,7 +3068,7 @@ void ImFontAtlasBuildPackCustomRects(ImFontAtlas* atlas, void* stbrp_context_opa
 
     ImVector<stbrp_rect> pack_rects;
     pack_rects.resize(user_rects.Size);
-    memset(pack_rects.Data, 0, (size_t)pack_rects.size_in_bytes());
+    IMGUI_STD_FUNC_NAMESPACE::memset(pack_rects.Data, 0, (size_t)pack_rects.size_in_bytes());
     for (int i = 0; i < user_rects.Size; i++)
     {
         pack_rects[i].w = user_rects[i].Width;
@@ -3376,7 +3381,7 @@ const ImWchar*  ImFontAtlas::GetGlyphRangesChineseSimplifiedCommon()
     static ImWchar full_ranges[IM_ARRAYSIZE(base_ranges) + IM_ARRAYSIZE(accumulative_offsets_from_0x4E00) * 2 + 1] = { 0 };
     if (!full_ranges[0])
     {
-        memcpy(full_ranges, base_ranges, sizeof(base_ranges));
+        IMGUI_STD_FUNC_NAMESPACE::memcpy(full_ranges, base_ranges, sizeof(base_ranges));
         UnpackAccumulativeOffsetsIntoRanges(0x4E00, accumulative_offsets_from_0x4E00, IM_ARRAYSIZE(accumulative_offsets_from_0x4E00), full_ranges + IM_ARRAYSIZE(base_ranges));
     }
     return &full_ranges[0];
@@ -3466,7 +3471,7 @@ const ImWchar*  ImFontAtlas::GetGlyphRangesJapanese()
     static ImWchar full_ranges[IM_ARRAYSIZE(base_ranges) + IM_ARRAYSIZE(accumulative_offsets_from_0x4E00)*2 + 1] = { 0 };
     if (!full_ranges[0])
     {
-        memcpy(full_ranges, base_ranges, sizeof(base_ranges));
+        IMGUI_STD_FUNC_NAMESPACE::memcpy(full_ranges, base_ranges, sizeof(base_ranges));
         UnpackAccumulativeOffsetsIntoRanges(0x4E00, accumulative_offsets_from_0x4E00, IM_ARRAYSIZE(accumulative_offsets_from_0x4E00), full_ranges + IM_ARRAYSIZE(base_ranges));
     }
     return &full_ranges[0];
@@ -3572,7 +3577,7 @@ ImFont::ImFont()
     Scale = 1.0f;
     Ascent = Descent = 0.0f;
     MetricsTotalSurface = 0;
-    memset(Used4kPagesMap, 0, sizeof(Used4kPagesMap));
+    IMGUI_STD_FUNC_NAMESPACE::memset(Used4kPagesMap, 0, sizeof(Used4kPagesMap));
 }
 
 ImFont::~ImFont()
@@ -3614,7 +3619,7 @@ void ImFont::BuildLookupTable()
     IndexAdvanceX.clear();
     IndexLookup.clear();
     DirtyLookupTables = false;
-    memset(Used4kPagesMap, 0, sizeof(Used4kPagesMap));
+    IMGUI_STD_FUNC_NAMESPACE::memset(Used4kPagesMap, 0, sizeof(Used4kPagesMap));
     GrowIndex(max_codepoint + 1);
     for (int i = 0; i < Glyphs.Size; i++)
     {
@@ -3910,7 +3915,7 @@ const char* ImFont::CalcWordWrapPositionA(float scale, const char* text, const c
 ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, const char* text_begin, const char* text_end, const char** remaining) const
 {
     if (!text_end)
-        text_end = text_begin + strlen(text_begin); // FIXME-OPT: Need to avoid this.
+        text_end = text_begin + IMGUI_STD_FUNC_NAMESPACE::strlen(text_begin); // FIXME-OPT: Need to avoid this.
 
     const float line_height = size;
     const float scale = size / FontSize;
@@ -4004,7 +4009,7 @@ void ImFont::RenderChar(ImDrawList* draw_list, float size, const ImVec2& pos, Im
 void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, ImU32 col, const ImVec4& clip_rect, const char* text_begin, const char* text_end, float wrap_width, bool cpu_fine_clip) const
 {
     if (!text_end)
-        text_end = text_begin + strlen(text_begin); // ImGui:: functions generally already provides a valid text_end, so this is merely to handle direct calls.
+        text_end = text_begin + IMGUI_STD_FUNC_NAMESPACE::strlen(text_begin); // ImGui:: functions generally already provides a valid text_end, so this is merely to handle direct calls.
 
     // Align to be pixel perfect
     float x = IM_TRUNC(pos.x);
@@ -4423,7 +4428,7 @@ static void stb__lit(const unsigned char *data, unsigned int length)
     IM_ASSERT(stb__dout + length <= stb__barrier_out_e);
     if (stb__dout + length > stb__barrier_out_e) { stb__dout += length; return; }
     if (data < stb__barrier_in_b) { stb__dout = stb__barrier_out_e+1; return; }
-    memcpy(stb__dout, data, length);
+    IMGUI_STD_FUNC_NAMESPACE::memcpy(stb__dout, data, length);
     stb__dout += length;
 }
 
