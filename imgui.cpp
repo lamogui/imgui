@@ -976,6 +976,7 @@ CODE
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 #include "imgui_internal.h"
+#include "core/system/memory.hpp"
 
 // System includes
 #include <stdio.h>      // vsnprintf, sscanf, printf
@@ -1200,9 +1201,11 @@ static void    FreeWrapper(void* ptr, void* user_data)        { IM_UNUSED(user_d
 static void*   MallocWrapper(size_t size, void* user_data)    { IM_UNUSED(user_data); IM_UNUSED(size); IM_ASSERT(0); return NULL; }
 static void    FreeWrapper(void* ptr, void* user_data)        { IM_UNUSED(user_data); IM_UNUSED(ptr); IM_ASSERT(0); }
 #endif
+#if 0 // Disabled (hacked MemAlloc directly)
 static ImGuiMemAllocFunc    GImAllocatorAllocFunc = MallocWrapper;
 static ImGuiMemFreeFunc     GImAllocatorFreeFunc = FreeWrapper;
 static void*                GImAllocatorUserData = NULL;
+#endif 
 
 //-----------------------------------------------------------------------------
 // [SECTION] USER FACING STRUCTURES (ImGuiStyle, ImGuiIO)
@@ -3506,12 +3509,12 @@ void ImGui::RenderFrame(ImVec2 p_min, ImVec2 p_max, ImU32 fill_col, bool border,
     const float border_size = g.Style.FrameBorderSize;
     if (border && border_size > 0.0f)
     {
-#ifdef WIN98
-        WinAddRect(p_min, p_max, true);
-#else
+//#ifdef WIN98
+//        WinAddRect(p_min, p_max, true);
+//#else
         window->DrawList->AddRect(p_min + ImVec2(1, 1), p_max + ImVec2(1, 1), GetColorU32(ImGuiCol_BorderShadow), rounding, 0, border_size);
         window->DrawList->AddRect(p_min, p_max, GetColorU32(ImGuiCol_Border), rounding, 0, border_size);
-#endif // WIN98
+//#endif // WIN98
     }
 }
 
@@ -3605,6 +3608,7 @@ void ImGui::SetCurrentContext(ImGuiContext* ctx)
 #endif
 }
 
+#if 0 // Disabled (hacked MemAlloc directly)
 void ImGui::SetAllocatorFunctions(ImGuiMemAllocFunc alloc_func, ImGuiMemFreeFunc free_func, void* user_data)
 {
     GImAllocatorAllocFunc = alloc_func;
@@ -3619,6 +3623,7 @@ void ImGui::GetAllocatorFunctions(ImGuiMemAllocFunc* p_alloc_func, ImGuiMemFreeF
     *p_free_func = GImAllocatorFreeFunc;
     *p_user_data = GImAllocatorUserData;
 }
+#endif // Disabled (hacked MemAlloc directly)
 
 ImGuiContext* ImGui::CreateContext(ImFontAtlas* shared_font_atlas)
 {
@@ -4294,7 +4299,8 @@ float ImGui::CalcWrapWidthForPos(const ImVec2& pos, float wrap_pos_x)
 // IM_ALLOC() == ImGui::MemAlloc()
 void* ImGui::MemAlloc(size_t size)
 {
-    void* ptr = (*GImAllocatorAllocFunc)(size, GImAllocatorUserData);
+	ScopedTag( la::Tag::IMGUI )
+	void * ptr = MemAllocNoAlign( static_cast< uint32 >( _size ) );
 #ifndef IMGUI_DISABLE_DEBUG_TOOLS
     if (ImGuiContext* ctx = GImGui)
         DebugAllocHook(&ctx->DebugAllocInfo, ctx->FrameCount, ptr, size);
@@ -4310,7 +4316,7 @@ void ImGui::MemFree(void* ptr)
         if (ImGuiContext* ctx = GImGui)
             DebugAllocHook(&ctx->DebugAllocInfo, ctx->FrameCount, ptr, (size_t)-1);
 #endif
-    return (*GImAllocatorFreeFunc)(ptr, GImAllocatorUserData);
+	return la::MemFreeAligned( _ptr );
 }
 
 // We record the number of allocation in recent frames, as a way to audit/sanitize our guiding principles of "no allocations on idle/repeating frames"
@@ -6725,7 +6731,7 @@ void ImGui::RenderWindowTitleBarContents(ImGuiWindow* window, const ImRect& titl
     if (focused) PushStyleColor(ImGuiCol_Text, IM_COL32(255,255,255,255));
     else PushStyleColor(ImGuiCol_Text, IM_COL32(192,192,192,255));
     ImGuiIO& io = ImGui::GetIO();
-    ImFont* font = io.Fonts->Fonts[1]; // Assume the icon font is here. pretty bad
+    ImFont* font = io.Fonts->Fonts[0]; // Assume the icon font is here. pretty bad
     PushFont(font);
 #endif // WIN98
 

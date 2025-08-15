@@ -4038,7 +4038,7 @@ static bool InputTextFilterCharacter(ImGuiContext* ctx, unsigned int* p_char, Im
         return false;
 
     // Generic named filters
-    if (apply_named_filters && (flags & (ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsScientific | (ImGuiInputTextFlags)ImGuiInputTextFlags_LocalizeDecimalPoint)))
+    if (apply_named_filters && (flags & (ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_CharsLowercase | ImGuiInputTextFlags_CharsNoBlank | ImGuiInputTextFlags_CharsScientific | (ImGuiInputTextFlags)ImGuiInputTextFlags_LocalizeDecimalPoint)))
     {
         // The libc allows overriding locale, with e.g. 'setlocale(LC_NUMERIC, "de_DE.UTF-8");' which affect the output/input of printf/scanf to use e.g. ',' instead of '.'.
         // The standard mandate that programs starts in the "C" locale where the decimal point is '.'.
@@ -4078,6 +4078,13 @@ static bool InputTextFilterCharacter(ImGuiContext* ctx, unsigned int* p_char, Im
         if (flags & ImGuiInputTextFlags_CharsUppercase)
             if (c >= 'a' && c <= 'z')
                 c += (unsigned int)('A' - 'a');
+
+		// Turn A-Z into a-z
+		if ( flags & ImGuiInputTextFlags_CharsLowercase ) {
+			if ( c >= 'A' && c <= 'Z' ) {
+				c -= ( 'A' - 'a' );
+			}
+		}
 
         if (flags & ImGuiInputTextFlags_CharsNoBlank)
             if (ImCharIsBlankW(c))
@@ -7012,14 +7019,14 @@ bool ImGui::BeginListBox(const char* label, const ImVec2& size_arg)
     }
 
     // FIXME-OPT: We could omit the BeginGroup() if label_size.x == 0.0f but would need to omit the EndGroup() as well.
-    BeginGroup();
-    if (label_size.x > 0.0f)
-    {
-        ImVec2 label_pos = ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y);
-        RenderText(label_pos, label);
-        window->DC.CursorMaxPos = ImMax(window->DC.CursorMaxPos, label_pos + label_size);
-        AlignTextToFramePadding();
-    }
+    //BeginGroup();
+    //if (label_size.x > 0.0f)
+    //{
+    //    ImVec2 label_pos = ImVec2(frame_bb.Max.x + style.ItemInnerSpacing.x, frame_bb.Min.y + style.FramePadding.y);
+    //    RenderText(label_pos, label);
+    //    window->DC.CursorMaxPos = ImMax(window->DC.CursorMaxPos, label_pos + label_size);
+    //    AlignTextToFramePadding();
+    //}
 
     BeginChild(id, frame_bb.GetSize(), ImGuiChildFlags_FrameStyle);
     return true;
@@ -7033,7 +7040,7 @@ void ImGui::EndListBox()
     IM_UNUSED(window);
 
     EndChild();
-    EndGroup(); // This is only required to be able to do IsItemXXX query on the whole ListBox including label
+    //EndGroup(); // This is only required to be able to do IsItemXXX query on the whole ListBox including label
 }
 
 bool ImGui::ListBox(const char* label, int* current_item, const char* const items[], int items_count, int height_items)
