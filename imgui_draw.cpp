@@ -459,10 +459,10 @@ void ImGui::StyleWin98(ImGuiStyle* dst)
     colors[ImGuiCol_TextSelectedBg]         = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
     colors[ImGuiCol_DragDropTarget]         = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
     colors[ImGuiCol_NavHighlight]           = colors[ImGuiCol_HeaderHovered];
-    colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(0.70f, 0.70f, 0.70f, 0.70f);
+    colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(0.0f, 162.f/255.f, 132.f/255.f, 1.f);
     colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.20f, 0.20f, 0.20f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
-
+	colors[ ImGuiCol_DockingPreview ] = colors[ ImGuiCol_Header ] * ImVec4( 1.0f, 1.0f, 1.0f, 0.7f );
 
     if (dst != NULL) return;
 
@@ -473,8 +473,10 @@ void ImGui::StyleWin98(ImGuiStyle* dst)
             return;
         }
     }
-    ImFont *font = io.Fonts->AddFontFromFileTTF("../../MS Sans Serif.ttf", 12.0f, NULL, io.Fonts->GetGlyphRangesDefault());
-    io.Fonts->AddFontFromFileTTF("../../MS Sans Serif Bold.ttf", 12.0f, NULL, io.Fonts->GetGlyphRangesDefault());
+    ImFont *font = //io.Fonts->AddFontDefault();
+	io.Fonts->AddFontFromFileTTF( "C:\\Windows\\Fonts\\REFSAN.TTF", 12.0f, NULL, io.Fonts->GetGlyphRangesDefault() );
+	//io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\SansSerifCollection.ttf", 12.0f, NULL, io.Fonts->GetGlyphRangesDefault());
+    //io.Fonts->AddFontFromFileTTF("../../MS Sans Serif Bold.ttf", 12.0f, NULL, io.Fonts->GetGlyphRangesDefault());
 
     // Run-length encoding of some icons
     // In retrorespect I should have used an icon map like FONT_ATLAS_DEFAULT_TEX_DATA_PIXELS

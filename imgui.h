@@ -282,8 +282,10 @@ typedef ImS64 ImGuiSelectionUserData;
 // Callback and functions types
 typedef int     (*ImGuiInputTextCallback)(ImGuiInputTextCallbackData* data);    // Callback function for ImGui::InputText()
 typedef void    (*ImGuiSizeCallback)(ImGuiSizeCallbackData* data);              // Callback function for ImGui::SetNextWindowSizeConstraints()
+#if 0 // Disabled hacked MemAlloc directly
 typedef void*   (*ImGuiMemAllocFunc)(size_t sz, void* user_data);               // Function signature for ImGui::SetAllocatorFunctions()
 typedef void    (*ImGuiMemFreeFunc)(void* ptr, void* user_data);                // Function signature for ImGui::SetAllocatorFunctions()
+#endif // Disabled hacked MemAlloc directly
 
 // ImVec2: 2D vector used to store positions, sizes etc. [Compile-time configurable type]
 // - This is a frequently used type in the API. Consider using IM_VEC2_CLASS_EXTRA to create implicit cast from/to our preferred type.
@@ -1156,8 +1158,10 @@ namespace ImGui
     // - Those functions are not reliant on the current context.
     // - DLL users: heaps and globals are not shared across DLL boundaries! You will need to call SetCurrentContext() + SetAllocatorFunctions()
     //   for each static/DLL boundary you are calling from. Read "Context and Memory Allocators" section of imgui.cpp for more details.
+#if 0 // disabled, hacked MemAlloc directly
     IMGUI_API void          SetAllocatorFunctions(ImGuiMemAllocFunc alloc_func, ImGuiMemFreeFunc free_func, void* user_data = NULL);
     IMGUI_API void          GetAllocatorFunctions(ImGuiMemAllocFunc* p_alloc_func, ImGuiMemFreeFunc* p_free_func, void** p_user_data);
+#endif // disabled, hacked MemAlloc directly
     IMGUI_API void*         MemAlloc(size_t size);
     IMGUI_API void          MemFree(void* ptr);
 
@@ -1291,6 +1295,7 @@ enum ImGuiInputTextFlags_
     ImGuiInputTextFlags_DisplayEmptyRefVal  = 1 << 14,  // InputFloat(), InputInt(), InputScalar() etc. only: when value is zero, do not display it. Generally used with ImGuiInputTextFlags_ParseEmptyRefVal.
     ImGuiInputTextFlags_NoHorizontalScroll  = 1 << 15,  // Disable following the cursor horizontally
     ImGuiInputTextFlags_NoUndoRedo          = 1 << 16,  // Disable undo/redo. Note that input text owns the text data while active, if you want to provide your own undo/redo stack you need e.g. to call ClearActiveID().
+	ImGuiInputTextFlags_CharsLowercase		= 1 << 21,   // Turn A..Z into a..z
 
     // Elide display / Alignment
     ImGuiInputTextFlags_ElideLeft           = 1 << 17,  // When text doesn't fit, elide left side to ensure right side stays visible. Useful for path/filenames. Single-line only!
@@ -2225,6 +2230,13 @@ struct ImGuiTableColumnSortSpecs
 // Defining a custom placement new() with a custom parameter allows us to bypass including <new> which on some platforms complains when user has disabled exceptions.
 //-----------------------------------------------------------------------------
 
+#ifdef NEW_REDEFINED
+#define IM_ALLOC( _SIZE )                     ImGui::MemAlloc(_SIZE)
+#define IM_FREE( _PTR )                       ImGui::MemFree(_PTR)
+#define IM_PLACEMENT_NEW( _PTR )              ::operator new( _PTR, __FILE__, __LINE__ )
+#define IM_NEW( _TYPE )                       ::operator new( ImGui::MemAlloc( sizeof( _TYPE ) ), __FILE__, __LINE__ ) _TYPE
+template<typename T> void IM_DELETE( T * p ) { if ( p ) { p->~T(); ImGui::MemFree( p ); } }
+#else 
 struct ImNewWrapper {};
 inline void* operator new(size_t, ImNewWrapper, void* ptr) { return ptr; }
 inline void  operator delete(void*, ImNewWrapper, void*)   {} // This is only required so we can use the symmetrical new()
@@ -2233,6 +2245,7 @@ inline void  operator delete(void*, ImNewWrapper, void*)   {} // This is only re
 #define IM_PLACEMENT_NEW(_PTR)              new(ImNewWrapper(), _PTR)
 #define IM_NEW(_TYPE)                       new(ImNewWrapper(), ImGui::MemAlloc(sizeof(_TYPE))) _TYPE
 template<typename T> void IM_DELETE(T* p)   { if (p) { p->~T(); ImGui::MemFree(p); } }
+#endif // NEW_REDEFINED
 
 //-----------------------------------------------------------------------------
 // ImVector<>
